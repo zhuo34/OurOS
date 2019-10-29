@@ -26,19 +26,19 @@ void log(int status, const char *format, ...) {
     // print status
     switch (status) {
         case LOG_OK:
-            kernel_puts("[ O K ] ", VGA_GREEN, VGA_BLACK);
+            kernel_putstring("[ O K ] ", VGA_GREEN, VGA_BLACK);
             break;
         case LOG_FAIL:
-            kernel_puts("[FAIL] ", VGA_RED, VGA_BLACK);
+            kernel_putstring("[FAIL] ", VGA_RED, VGA_BLACK);
             break;
         case LOG_START:
-            kernel_puts("[START] ", VGA_BLUE, VGA_BLACK);
+            kernel_putstring("[START] ", VGA_BLUE, VGA_BLACK);
             break;
         case LOG_END:
-            kernel_puts("[ END ] ", VGA_BLUE, VGA_BLACK);
+            kernel_putstring("[ END ] ", VGA_BLUE, VGA_BLACK);
             break;
         case LOG_STEP:
-            kernel_puts("[STEP] ", VGA_WHITE, VGA_BLACK);
+            kernel_putstring("[STEP] ", VGA_WHITE, VGA_BLACK);
             break;
         default:
             kernel_assert(0, "[LOG]: Undefined log status.");
@@ -50,7 +50,7 @@ void log(int status, const char *format, ...) {
     // print log message
     va_list ap;
     va_start(ap, format);
-    kernel_vprintf(format, ap);
+    kernel_printf_argList(VGA_WHITE, VGA_BLACK, format, ap);
     va_end(ap);
     kernel_printf("\n");
 }

@@ -14,4 +14,8 @@ typedef unsigned char   Byte;
 typedef unsigned short  Word;
 typedef unsigned long   DWord;
 
+typedef enum {
+    false, true
+} bool;
+
 #endif // OS_TYPE_H

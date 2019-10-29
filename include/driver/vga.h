@@ -7,27 +7,33 @@ extern int cursor_row;
 extern int cursor_col;
 extern int cursor_freq;
 
-#define VGA_RED   0x00f
-#define VGA_GREEN 0x0f0
-#define VGA_BLUE  0xf00
-#define VGA_BLACK 0x000
-#define VGA_WHITE 0xfff
-#define VGA_YELLOW 0x0ff
+#define VGA_RED     0x00f
+#define VGA_GREEN   0x0f0
+#define VGA_BLUE    0xf00
+#define VGA_BLACK   0x000
+#define VGA_WHITE   0xfff
+#define VGA_YELLOW  0x0ff
 
-struct screen_color {
-    int front;
-    int background;
-};
-
+// 提供给外部的接口
 void init_vga();
+
 void kernel_set_cursor();
-void kernel_clear_screen(int row);
+void kernel_clear_screen();
 void kernel_scroll_screen();
-void kernel_putchar_at(int ch, int fc, int bg, int row, int col);
-int kernel_putchar(int ch, int fc, int bg);
-int kernel_puts(const char* s, int fc, int bg);
-int kernel_putint(int i, int fc, int bg);
-int kernel_vprintf(const char *format, va_list ap);
+
 int kernel_printf(const char* format, ...);
+int kernel_printf_error(const char* format, ...);
+int kernel_printf_color(int fgColor, int bgColor, const char* format, ...);
+
+void kernel_putchar_at(int ch, int row, int col);
+void kernel_putchar_at_color(int ch, int fgColor, int bgColor, int row, int col);
+
+// 内部使用
+int kernel_printf_argList(int fgColor, int bgColor, const char* format, va_list argList);
+int kernel_putchar(int ch, int fgColor, int bgColor);
+int kernel_putstring(const char* string, int fgColor, int bgColor);
+int kernel_putint(int num, int fgColor, int bgColor);
+int kernel_puthex(uint hex, bool isUpper, int fgColor, int bgColor);
+
 
 #endif // DRIVER_VGA_H

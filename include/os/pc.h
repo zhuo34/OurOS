@@ -3,7 +3,7 @@
 
 #include <os/type.h>
 
-struct regs_context {
+typedef struct regs_context {
     u32 epc;
     u32 at;
     u32 v0, v1;
@@ -13,9 +13,7 @@ struct regs_context {
     u32 t8, t9;
     u32 hi, lo;
     u32 gp, sp, fp, ra;
-};
-
-typedef struct regs_context context;
+}context;
 
 void init_pc();
 

@@ -26,8 +26,8 @@ void ps() {
     ps_buffer_index = 0;
     ps_buffer[0] = 0;
     kernel_clear_screen(31);
-    kernel_puts("PowerShell\n", 0xfff, 0);
-    kernel_puts("PS>", 0xfff, 0);
+    kernel_putstring("PowerShell\n", 0xfff, 0);
+    kernel_putstring("PS>", 0xfff, 0);
     while (1) {
         c = kernel_getchar();
         if (c == '\n') {
@@ -39,11 +39,11 @@ void ps() {
             } else
                 parse_cmd();
             ps_buffer_index = 0;
-            kernel_puts("PS>", 0xfff, 0);
+            kernel_putstring("PS>", 0xfff, 0);
         } else if (c == 0x08) {
             if (ps_buffer_index) {
                 ps_buffer_index--;
-                kernel_putchar_at(' ', 0xfff, 0, cursor_row, cursor_col - 1);
+                kernel_putchar_at(' ', cursor_row, cursor_col - 1);
                 cursor_col--;
                 kernel_set_cursor();
             }
@@ -90,7 +90,7 @@ void parse_cmd() {
         for (i = 0; i < 512; i++)
             sd_buffer[i] = i;
         sd_write_block(sd_buffer, 7, 1);
-        kernel_puts("sdwi\n", 0xfff, 0);
+        kernel_putstring("sdwi\n", 0xfff, 0);
     } else if (kernel_strcmp(ps_buffer, "sdr") == 0) {
         sd_read_block(sd_buffer, 7, 1);
         for (i = 0; i < 512; i++) {
@@ -102,14 +102,9 @@ void parse_cmd() {
             sd_buffer[i] = 0;
         }
         sd_write_block(sd_buffer, 7, 1);
-        kernel_puts("sdwz\n", 0xfff, 0);
-    } else if (kernel_strcmp(ps_buffer, "mminfo") == 0) {
-        bootmap_info("bootmm");
-        buddy_info();
-    } else if (kernel_strcmp(ps_buffer, "mmtest") == 0) {
-        kernel_printf("kmalloc : %x, size = 1KB\n", kmalloc(1024));
+        kernel_putstring("sdwz\n", 0xfff, 0);
     } else {
-        kernel_puts(ps_buffer, 0xfff, 0);
-        kernel_puts(": command not found\n", 0xfff, 0);
+        kernel_putstring(ps_buffer, 0xfff, 0);
+        kernel_putstring(": command not found\n", 0xfff, 0);
     }
 }
