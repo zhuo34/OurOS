@@ -295,5 +295,4 @@ ModelManifest.xml
 
 .DS_Store
 
-*.config
-config/tools.conf
+config/
