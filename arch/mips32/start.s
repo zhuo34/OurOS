@@ -1,50 +1,47 @@
 .extern init_kernel
 .globl start
 .globl exception
-.globl restore_context
-
 .extern kernel_sp
 .extern exception_handler
 .extern interrupt_handler
-.extern current_task
 
 .set noreorder
 .set noat
 .align 2
 
 exception:
-	j   exception_start
-	nop
+	#TLB refill
+ 	mfc0 $k0, $4
+ 	lw $k1, 0($k0)
+ 	mtc0 $k1, $2
+ 	lw $k1, 4($k0)
+ 	mtc0 $k1, $3
+ 	lw $k1, 8($k0)
+ 	mtc0 $k1, $10
+ 	lw $k1, 12($k0)
+ 	mtc0 $k1, $5
+ 	nop #	CP0 hazard
+ 	nop #  	CP0 hazard
+ 	tlbwr
+ 	eret
 
 .org 0x0180
-exception_start:
 	lui $k0, 0x8000
 	sltu $k0, $sp, $k0
 	beq $k0, $zero, exception_save_context
-	move $k1, $sp	#延时槽
-	#la  $k0, kernel_sp		#switch_ex?????
-	#add by Ice
-	la   $k0, current_task
-	lw   $k0, 0($k0)
-    addiu $k0, $k0, 4096
-	#done by Ice
+	move $k1, $sp
+	la  $k0, kernel_sp	
 	j exception_save_context
-	or   $sp, $k0, $zero
-	#lw  $sp, 0($k0)
-
+	lw  $sp, 0($k0)
 
 .org 0x0200
 	lui $k0, 0x8000
 	sltu $k0, $sp, $k0
 	beq $k0, $zero, interrupt_save_context
 	move $k1, $sp
-	#la  $k0, kernel_sp
-	#lw  $sp, 0($k0)
-	la   $k0, current_task
-	lw   $k0, 0($k0)
-    addiu $k0, $k0, 4096	
-	or   $sp, $k0, $zero
-
+	la  $k0, kernel_sp
+	lw  $sp, 0($k0)
+		
 interrupt_save_context:
 	addiu $sp, $sp, -128
 	sw $at, 4($sp)
@@ -125,7 +122,7 @@ restore_context:
 	lw $t8, 96($sp)
 	lw $t9, 100($sp)
 	lw $gp, 112($sp)
-	lw $k1, 116($sp)  #sp
+	lw $k1, 116($sp)
 	lw $fp, 120($sp)
 	lw $ra, 124($sp)	
 	move $sp, $k1
@@ -159,7 +156,7 @@ exception_save_context:
 	sw $t8, 96($sp)
 	sw $t9, 100($sp)
 	sw $gp, 112($sp)
-	sw $k1, 116($sp) #sp
+	sw $k1, 116($sp)
 	sw $fp, 120($sp)
 	sw $ra, 124($sp)
 	mfc0 $a0, $12
@@ -171,9 +168,6 @@ exception_save_context:
 	sw $t3, 104($sp) # HI
 	sw $t4, 108($sp) # LO
 
-	#add by Ice
-	mfc0  $a3, $8  #bad_addr
-	#done by Ice
 # jump to do_exceptions
 	move $a2, $sp
 	addi $sp, $sp, -32

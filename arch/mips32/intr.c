@@ -41,12 +41,12 @@ int disable_interrupts() {
     return old;
 }
 
-void do_interrupts(unsigned int status, unsigned int cause, context* pt_context) {
+void do_interrupts(unsigned int status, unsigned int cause, context* sp) {
     int i;
     int index = cause >> 8;
     for (i = 0; i < 8; i++) {
         if ((index & 1) && interrupts[i] != 0) {
-            interrupts[i](status, cause, pt_context);
+            interrupts[i](status, cause, sp);
         }
         index >>= 1;
     }
@@ -60,8 +60,7 @@ void register_interrupt_handler(int index, intr_fn fn) {
         "mfc0 $t0, $12\n\t"
         "or $t0, $t0, %0\n\t"
         "mtc0 $t0, $12"
-        :
-        : "r"(index));
+        : "=r"(index));
 }
 
 #pragma GCC pop_options

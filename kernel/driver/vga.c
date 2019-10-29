@@ -2,186 +2,231 @@
 #include <arch.h>
 #include <os/utils.h>
 
-const int VGA_CHAR_MAX_ROW = 32;
-const int VGA_CHAR_MAX_COL = 128;
-const int VGA_CHAR_ROW = 30;
-const int VGA_CHAR_COL = 80;
+const int VGA_SCREEN_MAX_ROW = 32;
+const int VGA_SCREEN_MAX_COL = 128;
+const int VGA_DISPLAY_MAX_ROW = 28;
+const int VGA_DISPLAY_MAX_COL = 80;
+
+const uint BLANK = 0x000fff00;
+
 int cursor_row;
 int cursor_col;
 int cursor_freq = 31;
 
-void kernel_set_cursor() {
-    *GPIO_CURSOR = ((cursor_freq & 0xff) << 16) + ((cursor_row & 0xff) << 8) + (cursor_col & 0xff);
-}
-
 void init_vga() {
-    unsigned int w = 0x000fff00;
     cursor_row = cursor_col = 0;
     cursor_freq = 31;
     kernel_set_cursor();
 }
 
-void kernel_clear_screen(int scope) {
-    unsigned int w = 0x000fff00;
-    scope &= 31;
+// 光标信息：0x__AABBCC --> AA: 闪烁频率，BB：光标行数，CC：光标列数
+void kernel_set_cursor() {
+    *GPIO_CURSOR = ((cursor_freq & 0xff) << 16) 
+                    + ((cursor_row & 0xff) << 8) 
+                    + (cursor_col & 0xff);
+}
+
+void kernel_clear_screen() {
     cursor_col = 0;
     cursor_row = 0;
     kernel_set_cursor();
-    kernel_memset_word(CHAR_VRAM, w, scope * VGA_CHAR_MAX_COL);
+    // kernel_memset_uint(CHAR_VRAM, BLANK, 31 * VGA_SCREEN_MAX_COL);
+    kernel_memset_uint(
+        CHAR_VRAM, 
+        BLANK, 
+        VGA_SCREEN_MAX_ROW * VGA_SCREEN_MAX_COL
+    );
 }
 
 void kernel_scroll_screen() {
-    unsigned int w = 0x000fff00;
-    kernel_memcpy(CHAR_VRAM, (CHAR_VRAM + VGA_CHAR_MAX_COL), (VGA_CHAR_ROW - 2) * VGA_CHAR_MAX_COL * 4);
-    kernel_memset_word((CHAR_VRAM + (VGA_CHAR_ROW - 2) * VGA_CHAR_MAX_COL), w, VGA_CHAR_MAX_COL);
+    kernel_memcpy(
+        CHAR_VRAM, 
+        CHAR_VRAM + VGA_SCREEN_MAX_COL, 
+        VGA_DISPLAY_MAX_ROW * VGA_SCREEN_MAX_COL * sizeof(int)
+    );
+    // kernel_memset_uint(
+    //     // CHAR_VRAM + (VGA_DISPLAY_MAX_ROW - 2) * VGA_SCREEN_MAX_COL, 
+    //     CHAR_VRAM + offset, 
+    //     BLANK, 
+    //     VGA_SCREEN_MAX_COL
+    // );
 }
 
-void kernel_putchar_at(int ch, int fc, int bg, int row, int col) {
-    unsigned int *p;
-    row = row & 31;
-    col = col & 127;
-    p = CHAR_VRAM + row * VGA_CHAR_MAX_COL + col;
-    *p = ((bg & 0xfff) << 20) + ((fc & 0xfff) << 8) + (ch & 0xff);
+
+int kernel_printf(const char* format, ...)
+{
+    va_list argList;
+    va_start(argList, format);
+
+    int cnt = kernel_printf_argList(VGA_WHITE, VGA_BLACK, format, argList);
+
+    va_end(argList);
+    return cnt;
 }
 
-int kernel_putchar(int ch, int fc, int bg) {
-    unsigned int w = 0x000fff00;
+int kernel_printf_error(const char* format, ...)
+{
+    va_list argList;
+    va_start(argList, format);
+
+    int cnt = kernel_printf_argList(VGA_RED, VGA_BLACK, format, argList);
+
+    va_end(argList);
+    return cnt;
+}
+
+
+int kernel_printf_color(int fgColor, int bgColorColor, const char *format, ...) {
+    va_list argList;
+    va_start(argList, format);
+
+    int cnt = kernel_printf_argList(fgColor, bgColorColor, format, argList);
+
+    va_end(argList);
+    return cnt;
+}
+
+int kernel_printf_argList(int fgColor, int bgColorColor, const char* format, va_list argList)
+{
+    int cnt = 0;
+    while (*format) {
+        if (*format != '%') {
+            kernel_putchar(*format++, VGA_WHITE, VGA_BLACK);
+        } else {
+            char type = *++format;
+            if(type == 'c') {
+                char valch = va_arg(argList, int);
+                kernel_putchar(valch, VGA_WHITE, VGA_BLACK);
+            } else if(type == 'd') {
+                int valint = va_arg(argList, int);
+                kernel_putint(valint, VGA_WHITE, VGA_BLACK);
+            } else if(type == 'x' || type == 'X') {
+                int valint = va_arg(argList, int);
+                kernel_puthex(valint, type == 'X', VGA_WHITE, VGA_BLACK);
+            } else if(type == 's') {
+                char *valstr = va_arg(argList, char*);
+                kernel_putstring(valstr, VGA_WHITE, VGA_BLACK);
+            } else {
+                cnt = -1;
+                break;
+            }
+            format ++;
+            cnt ++;
+        }
+    }
+
+    return cnt;
+}
+
+int kernel_putchar(int ch, int fgColor, int bgColor) {
+    uint* cursor_addr = (uint*)(CHAR_VRAM + cursor_row * VGA_SCREEN_MAX_COL + cursor_col);
+    
     if (ch == '\r')
-        return ch;
-    if (ch == '\n') {
-        kernel_memset_word(CHAR_VRAM + cursor_row * VGA_CHAR_MAX_COL + cursor_col, w, VGA_CHAR_COL - cursor_col);
+        ;
+    else if (ch == '\n') {
+        kernel_memset_uint(cursor_addr, BLANK, VGA_DISPLAY_MAX_COL - cursor_col);
         cursor_col = 0;
-        if (cursor_row == VGA_CHAR_ROW - 2) {
+        if (cursor_row == VGA_DISPLAY_MAX_ROW) {
             kernel_scroll_screen();
         } else {
-            cursor_row++;
+            cursor_row ++;
 #ifdef VGA_CALIBRATE
-            kernel_putchar(' ', fc, bg);
+            kernel_putchar(' ', fgColor, bgColor);
 #endif  // VGA_CALIBRATE
         }
     } else if (ch == '\t') {
-        if (cursor_col >= VGA_CHAR_COL - 4) {
-            kernel_putchar('\n', 0, 0);
+        if (cursor_col >= VGA_DISPLAY_MAX_COL - 4) {
+            kernel_putchar('\n', VGA_BLACK, VGA_BLACK);
         } else {
-            kernel_memset_word(CHAR_VRAM + cursor_row * VGA_CHAR_MAX_COL + cursor_col, w, 4 - cursor_col & 3);
-            cursor_col = (cursor_col + 4) & (-4);
+            kernel_memset_uint(cursor_addr, BLANK, 4 - cursor_col & 0x3);
+            // tab 4 制表位对齐
+            cursor_col = (cursor_col + 4) & (-0x4);
         }
     } else {
-        if (cursor_col == VGA_CHAR_COL) {
+        if (cursor_col == VGA_DISPLAY_MAX_COL) {
             kernel_putchar('\n', 0, 0);
         }
-        kernel_putchar_at(ch, fc, bg, cursor_row, cursor_col);
+        kernel_putchar_at_color(ch, fgColor, bgColor, cursor_row, cursor_col);
         cursor_col++;
     }
+
     kernel_set_cursor();
     return ch;
 }
 
-int kernel_puts(const char *s, int fc, int bg) {
+int kernel_putstring(const char *string, int fgColor, int bgColor) {
     int ret = 0;
-    while (*s) {
-        ret++;
-        kernel_putchar(*s++, fc, bg);
+    while (*string) {
+        ret ++;
+        kernel_putchar(*string++, fgColor, bgColor);
     }
     return ret;
 }
 
-int kernel_putint(int x, int fc, int bg) {
+int kernel_putint(int num, int fgColor, int bgColor) {
+    // int 最大值为10位数，加上符号最多11位，再加上结尾'\0' 1位
+    // 故字符串buffer取12位
     char buffer[12];
+    buffer[11] = '\0';
     char *ptr = buffer + 11;
-    int neg = 0;
-    buffer[11] = 0;
-    if (x == 0) {
-        kernel_putchar('0', fc, bg);
-        return x;
+
+    bool isNegative = false;
+    if (num < 0) {
+        isNegative = true;
+        num = -num;
     }
-    if (x < 0) {
-        neg = 1;
-        x = -x;
+    
+    if (num == 0) {
+        kernel_putchar('0', fgColor, bgColor);
+    } else {
+        while (num) {
+            ptr--;
+            *ptr = (num % 10) + '0';
+            num /= 10;
+        }
+        if (isNegative) {
+            ptr--;
+            *ptr = '-';
+        }
+
+        kernel_putstring(ptr, fgColor, bgColor);
     }
-    while (x) {
-        ptr--;
-        *ptr = (x % 10) + '0';
-        x /= 10;
-    }
-    if (neg) {
-        ptr--;
-        *ptr = '-';
-    }
-    kernel_puts(ptr, fc, bg);
-    return x;
+    
+    return num;
 }
 
 static const char *HEX_MAP = "0123456789abcdef";
-int kernel_putintx(unsigned int x, int fc, int bg) {
+int kernel_puthex(uint hex, bool isUpper, int fgColor, int bgColor) {
     char buffer[12];
     char *ptr = buffer + 11;
-    buffer[11] = 0;
-    if (x == 0) {
-        kernel_putchar('0', fc, bg);
-        return x;
-    }
-    while (x) {
-        ptr--;
-        *ptr = HEX_MAP[x & 15];
-        x >>= 4;
-    }
-    kernel_puts(ptr, fc, bg);
-    return x;
-}
+    buffer[11] = '\0';
 
-int kernel_vprintf(const char *format, va_list ap) {
-    int cnt = 0;
-    while (*format) {
-        if (*format != '%') {
-            kernel_putchar(*format++, 0xfff, 0);
-        } else {
-            format++;
-            switch (*format) {
-                case 'c': {
-                    char valch = va_arg(ap, int);
-                    kernel_putchar(valch, 0xfff, 0);
-                    format++;
-                    cnt++;
-                    break;
-                }
-                case 'd': {
-                    int valint = va_arg(ap, int);
-                    kernel_putint(valint, 0xfff, 0);
-                    format++;
-                    cnt++;
-                    break;
-                }
-                case 'x': {
-                    int valint = va_arg(ap, int);
-                    kernel_putintx(valint, 0xfff, 0);
-                    format++;
-                    cnt++;
-                    break;
-                }
-                case 's': {
-                    char *valstr = va_arg(ap, char *);
-                    kernel_puts(valstr, 0xfff, 0);
-                    format++;
-                    cnt++;
-                    break;
-                }
-                default: {
-                    cnt = -1;
-                    goto exit;
-                }
-            }
+    if (hex == 0) {
+        kernel_putchar('0', fgColor, bgColor);
+    } else {
+        while (hex) {
+            char value = hex & 0xF;
+            ptr--;
+            *ptr = HEX_MAP[value] + (isUpper && value > 9)? ('A' - 'a'): 0;
+            hex >>= 4;
         }
+        kernel_putstring(ptr, fgColor, bgColor);
     }
-exit:
-    return cnt;
+    return hex;
 }
 
-int kernel_printf(const char *format, ...) {
-    int cnt = 0;
-    va_list ap;
-    va_start(ap, format);
-    cnt = kernel_vprintf(format, ap);
-    va_end(ap);
-    return cnt;
+void kernel_putchar_at(int ch, int row, int col) {
+    kernel_putchar_at_color(ch, VGA_BLACK, VGA_WHITE, row, col);
 }
+
+// 字符数据信息：0xBBBFFFCC --> BBB：背景颜色，FFF: 前景颜色，CC：字符值
+void kernel_putchar_at_color(int ch, int fgColor, int bgColor, int row, int col) {
+    row = row & 0x1F;
+    col = col & 0x7F;
+
+    uint *p = CHAR_VRAM + row * VGA_SCREEN_MAX_COL + col;
+    *p = ((bgColor & 0xFFF) << 20) + ((fgColor & 0xFFF) << 8) + (ch & 0xFF);
+}
+
+
+

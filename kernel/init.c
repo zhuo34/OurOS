@@ -14,6 +14,8 @@
 #include <os/bootmm.h>
 #include <os/buddy.h>
 
+#include <os/fs/fat.h>
+
 #include <os/syscall.h>
 
 #include "../usr/ps.h"

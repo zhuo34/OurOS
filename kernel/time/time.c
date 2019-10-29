@@ -32,7 +32,7 @@ void get_time_string(unsigned int ticks_high, unsigned int ticks_low, char *buf)
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 
-void time_handler(unsigned int status, unsigned int cause, unsigned int *sp) {
+void time_handler(unsigned int status, unsigned int cause, context *sp) {
     unsigned int ticks_high, ticks_low;
     int i;
     char buffer[8];
@@ -44,9 +44,9 @@ void time_handler(unsigned int status, unsigned int cause, unsigned int *sp) {
     get_time_string(ticks_high, ticks_low, buffer);
 
     for (i = 0; i < 11; i++)
-        kernel_putchar_at(day[i], 0xfff, 0, 29, 61 + i);
+        kernel_putchar_at(day[i], 29, 61 + i);
     for (i = 0; i < 8; i++)
-        kernel_putchar_at(buffer[i], 0xfff, 0, 29, 72 + i);
+        kernel_putchar_at(buffer[i], 29, 72 + i);
 
     asm volatile("mtc0 $zero, $9");
 }

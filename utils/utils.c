@@ -1,55 +1,55 @@
 #include <driver/vga.h>
 #include <os/utils.h>
 
-void* kernel_memcpy(void* dest, void* src, int len) {
-    char* deststr = dest;
+void* kernel_memcpy(void* dst, void* src, int len) {
+    char* dststr = dst;
     char* srcstr = src;
     while (len--) {
-        *deststr = *srcstr;
-        deststr++;
+        *dststr = *srcstr;
+        dststr++;
         srcstr++;
     }
-    return dest;
+    return dst;
 }
 
 #pragma GCC push_options
 #pragma GCC optimize("O2")
-void* kernel_memset(void* dest, int b, int len) {
+void* kernel_memset(void* dst, int b, int len) {
 #ifdef MEMSET_DEBUG
-    kernel_printf("memset:%x,%x,len%x,", (int)dest, b, len);
+    kernel_printf("memset:%x,%x,len%x,", (int)dst, b, len);
 #endif  // ! MEMSET_DEBUG
     char content = b ? -1 : 0;
-    char* deststr = dest;
+    char* dststr = dst;
     while (len--) {
-        *deststr = content;
-        deststr++;
+        *dststr = content;
+        dststr++;
     }
 #ifdef MEMSET_DEBUG
-    kernel_printf("%x\n", (int)deststr);
+    kernel_printf("%x\n", (int)dststr);
 #endif  // ! MEMSET_DEBUG
-    return dest;
+    return dst;
 }
 #pragma GCC pop_options
 
-unsigned int* kernel_memset_word(unsigned int* dest, unsigned int w, int len) {
+uint* kernel_memset_uint(uint* dst, uint value, int len) {
     while (len--)
-        *dest++ = w;
+        *dst++ = value;
 
-    return dest;
+    return dst;
 }
 
-int kernel_strcmp(const char* dest, const char* src) {
-    while ((*dest == *src) && (*dest != 0)) {
-        dest++;
+int kernel_strcmp(const char* dst, const char* src) {
+    while ((*dst == *src) && (*dst != 0)) {
+        dst++;
         src++;
     }
-    return *dest - *src;
+    return *dst - *src;
 }
 
-char* kernel_strcpy(char* dest, const char* src) {
-    while ((*dest++ = *src++))
+char* kernel_strcpy(char* dst, const char* src) {
+    while ((*dst++ = *src++))
         ;
-    return dest;
+    return dst;
 }
 
 int pow(int x, int z) {
