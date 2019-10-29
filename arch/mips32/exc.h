@@ -1,5 +1,5 @@
-#ifndef _EXC_H
-#define _EXC_H
+#ifndef EXC_H
+#define EXC_H
 
 #include <os/pc.h>
 
@@ -11,4 +11,4 @@ void do_exceptions(unsigned int status, unsigned int cause, context* pt_context)
 void register_exception_handler(int index, exc_fn fn);
 void init_exception();
 
-#endif
+#endif // EXC_H

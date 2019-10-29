@@ -1,5 +1,5 @@
-#ifndef _PAGE__H
-#define _PAGE__H
+#ifndef PAGE_H
+#define PAGE_H
 
 void init_pgtable();
 
@@ -31,4 +31,4 @@ typedef struct {
     __PageMask PageMask;
 } PageTableEntry;
 
-#endif
+#endif // PAGE_H
