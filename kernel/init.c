@@ -24,12 +24,12 @@ void machine_info() {
     int row;
     int col;
     kernel_printf("\n%s\n", "412-UNIX V1.0");
-    row = cursor_row;
-    col = cursor_col;
-    cursor_row = 29;
+    row = cursor.row;
+    col = cursor.col;
+    cursor.row = 29;
     kernel_printf("%s", "Created by Dorm 412 Block 32, Yuquan Campus, Zhejiang University.");
-    cursor_row = row;
-    cursor_col = col;
+    cursor.row = row;
+    cursor.col = col;
     kernel_set_cursor();
 }
 

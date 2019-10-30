@@ -4,6 +4,7 @@
 #include <driver/vga.h>
 
 #undef assert
-void kernel_assert(int statement, char * message);
+
+int kernel_assert(int statement, const char *format, ...);
 
 #endif // ASSERT_H

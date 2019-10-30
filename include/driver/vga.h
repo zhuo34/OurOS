@@ -3,16 +3,20 @@
 
 #include <os/utils.h>
 
-extern int cursor_row;
-extern int cursor_col;
-extern int cursor_freq;
-
-#define VGA_RED     0x00f
-#define VGA_GREEN   0x0f0
-#define VGA_BLUE    0xf00
+#define VGA_RED     0x00F
+#define VGA_GREEN   0x0F0
+#define VGA_BLUE    0xF00
 #define VGA_BLACK   0x000
-#define VGA_WHITE   0xfff
-#define VGA_YELLOW  0x0ff
+#define VGA_WHITE   0xFFF
+#define VGA_YELLOW  0x0FF
+
+typedef struct
+{
+    int row;
+    int col;
+    int freq;
+}CursorInfo;
+extern CursorInfo cursor;
 
 // 提供给外部的接口
 void init_vga();

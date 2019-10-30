@@ -43,8 +43,8 @@ void ps() {
         } else if (c == 0x08) {
             if (ps_buffer_index) {
                 ps_buffer_index--;
-                kernel_putchar_at(' ', cursor_row, cursor_col - 1);
-                cursor_col--;
+                kernel_putchar_at(' ', cursor.row, cursor.col - 1);
+                cursor.col--;
                 kernel_set_cursor();
             }
         } else {

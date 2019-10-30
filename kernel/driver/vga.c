@@ -1,6 +1,7 @@
 #include "vga.h"
 #include <arch.h>
-#include <os/utils.h>
+
+#include <os/time.h>
 
 const int VGA_SCREEN_MAX_ROW = 32;
 const int VGA_SCREEN_MAX_COL = 128;
@@ -9,26 +10,26 @@ const int VGA_DISPLAY_MAX_COL = 80;
 
 const uint BLANK = 0x000fff00;
 
-int cursor_row;
-int cursor_col;
-int cursor_freq = 31;
+CursorInfo cursor = {
+    0, 0, 31
+};
 
 void init_vga() {
-    cursor_row = cursor_col = 0;
-    cursor_freq = 31;
+    cursor.row = cursor.col = 0;
+    cursor.freq = 31;
     kernel_set_cursor();
 }
 
 // 光标信息：0x__AABBCC --> AA: 闪烁频率，BB：光标行数，CC：光标列数
 void kernel_set_cursor() {
-    *GPIO_CURSOR = ((cursor_freq & 0xff) << 16) 
-                    + ((cursor_row & 0xff) << 8) 
-                    + (cursor_col & 0xff);
+    *GPIO_CURSOR = ((cursor.freq & 0xff) << 16) 
+                    + ((cursor.row & 0xff) << 8) 
+                    + (cursor.col & 0xff);
 }
 
 void kernel_clear_screen() {
-    cursor_col = 0;
-    cursor_row = 0;
+    cursor.col = 0;
+    cursor.row = 0;
     kernel_set_cursor();
     // kernel_memset_uint(CHAR_VRAM, BLANK, 31 * VGA_SCREEN_MAX_COL);
     kernel_memset_uint(
@@ -51,7 +52,6 @@ void kernel_scroll_screen() {
     //     VGA_SCREEN_MAX_COL
     // );
 }
-
 
 int kernel_printf(const char* format, ...)
 {
@@ -119,35 +119,35 @@ int kernel_printf_argList(int fgColor, int bgColorColor, const char* format, va_
 }
 
 int kernel_putchar(int ch, int fgColor, int bgColor) {
-    uint* cursor_addr = (uint*)(CHAR_VRAM + cursor_row * VGA_SCREEN_MAX_COL + cursor_col);
+    uint* cursor_addr = (uint*)(CHAR_VRAM + cursor.row * VGA_SCREEN_MAX_COL + cursor.col);
     
     if (ch == '\r')
         ;
     else if (ch == '\n') {
-        kernel_memset_uint(cursor_addr, BLANK, VGA_DISPLAY_MAX_COL - cursor_col);
-        cursor_col = 0;
-        if (cursor_row == VGA_DISPLAY_MAX_ROW) {
+        kernel_memset_uint(cursor_addr, BLANK, VGA_DISPLAY_MAX_COL - cursor.col);
+        cursor.col = 0;
+        if (cursor.row == VGA_DISPLAY_MAX_ROW) {
             kernel_scroll_screen();
         } else {
-            cursor_row ++;
+            cursor.row ++;
 #ifdef VGA_CALIBRATE
             kernel_putchar(' ', fgColor, bgColor);
 #endif  // VGA_CALIBRATE
         }
     } else if (ch == '\t') {
-        if (cursor_col >= VGA_DISPLAY_MAX_COL - 4) {
+        if (cursor.col >= VGA_DISPLAY_MAX_COL - 4) {
             kernel_putchar('\n', VGA_BLACK, VGA_BLACK);
         } else {
-            kernel_memset_uint(cursor_addr, BLANK, 4 - cursor_col & 0x3);
+            kernel_memset_uint(cursor_addr, BLANK, 4 - cursor.col & 0x3);
             // tab 4 制表位对齐
-            cursor_col = (cursor_col + 4) & (-0x4);
+            cursor.col = (cursor.col + 4) & (-0x4);
         }
     } else {
-        if (cursor_col == VGA_DISPLAY_MAX_COL) {
+        if (cursor.col == VGA_DISPLAY_MAX_COL) {
             kernel_putchar('\n', 0, 0);
         }
-        kernel_putchar_at_color(ch, fgColor, bgColor, cursor_row, cursor_col);
-        cursor_col++;
+        kernel_putchar_at_color(ch, fgColor, bgColor, cursor.row, cursor.col);
+        cursor.col++;
     }
 
     kernel_set_cursor();
