@@ -1,6 +1,7 @@
 #ifndef OS_TYPE_H
 #define OS_TYPE_H
 
+#define NULL    0
 #define null    0
 #define nullptr 0
 

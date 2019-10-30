@@ -9,13 +9,13 @@ static unsigned int* const PS2_PHY = (unsigned int*)0xbfc09010;
 
 static KeyBoard_Callback keyboard_callback = nullptr;
 
-static volatile unsigned int keyboard_state = 0;
-#define CAPSLOCK_MASK 4
-#define NUMLOCK_MASK 2
-#define SCRLOCK_MASK 1
-#define SHIFT_MASK 8
-#define CTRL_MASK 16
-#define ALT_MASK 32
+static volatile uint keyboard_state = 0;
+#define SCRLOCK_MASK    1
+#define NUMLOCK_MASK    2
+#define CAPSLOCK_MASK   4
+#define SHIFT_MASK      8
+#define CTRL_MASK       16
+#define ALT_MASK        32
 
 static unsigned int buffer[32];
 static unsigned int ready[32];
@@ -161,43 +161,38 @@ void ps2_handler(unsigned int status, unsigned int cause, context* pt_context) {
 #ifdef PS2_DEBUG
             print_buffer();
 #endif  // ! PS2_DEBUG
-            switch (key_buffer) {
-                case 0x58:  // Caps lock down
-                    keyboard_state ^= CAPSLOCK_MASK;
-                    keyboard_cmd_state = 1;
-                    PS2_PHY[0] = 0xed;
-                    break;
-                case 0x12:  // LShift down
-                case 0x59:  // RShift down
+
+            bool pressDown = ((key_buffer >> 8) & 0xFF) != 0xF0;
+            if(pressDown) {
+                key_buffer = ((key_buffer >> 16) << 8) | (key_buffer & 0xFF);
+            }
+
+            if(key_buffer == KEY_CAPS_LOCK && pressDown) {
+                keyboard_state ^= CAPSLOCK_MASK;
+                keyboard_cmd_state = 1;
+                PS2_PHY[0] = 0xED;
+            } else if(key_buffer == KEY_LEFT_SHIFT || key_buffer == KEY_RIGHT_SHIFT) {
+                if(pressDown) {
                     keyboard_state |= SHIFT_MASK;
-                    break;
-                case 0xf012:  // LShift up
-                case 0xf059:  // RShift up
+                } else {
                     keyboard_state &= ~SHIFT_MASK;
-                    break;
-                case 0x14:    // LCtrl down
-                case 0xe014:  // RCtrl down
+                }
+            } else if(key_buffer == KEY_LEFT_CTRL || key_buffer == KEY_RIGHT_CTRL) {
+                if(pressDown) {
                     keyboard_state |= CTRL_MASK;
-                    break;
-                case 0xf014:    // LCtrl up
-                case 0xe0f014:  // RCtrl up
+                } else {
                     keyboard_state &= ~CTRL_MASK;
-                    break;
-                case 0x11:    // LAlt down
-                case 0xe011:  // RAlt down
-                    keyboard_state |= ALT_MASK;
-                    break;
-                case 0xf011:    // LAlt up
-                case 0xe0f011:  // RAlt up
-                    keyboard_state &= ~ALT_MASK;
-                    break;
+                }
+            } else if(key_buffer == KEY_LEFT_ALT || key_buffer == KEY_RIGHT_ALT) {
+                if(pressDown) {
+                    keyboard_state |= CTRL_MASK;
+                } else {
+                    keyboard_state &= ~CTRL_MASK;
+                }
             }
 
             if(keyboard_callback) {
-                bool isUp = ((key_buffer >> 8) & 0xFF) == 0xF0;
-                if(isUp)
-                    key_buffer = ((key_buffer >> 16) << 8) | (key_buffer & 0xFF);
-                keyboard_callback(key_buffer, isUp);
+                keyboard_callback(key_buffer, pressDown);
             }
 
             key_buffer = 0;

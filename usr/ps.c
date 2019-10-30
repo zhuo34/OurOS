@@ -19,13 +19,13 @@ void test_syscall4() {
         "nop\n\t");
 }
 
-void callback(int keyCode, bool isUp) {
+void callback(int keyCode, bool pressDown) {
     // kernel_printf("keyCode: 0x%x, isUp: %d\n", keyCode, isUp);
-    if(!isUp) {
-        if(keyCode == 0xE06B){ // left
+    if(pressDown) {
+        if(keyCode == KEY_ARROW_LEFT){
             cursor.col--;
             kernel_set_cursor();
-        } else if(keyCode == 0xE074) { // right
+        } else if(keyCode == KEY_ARROW_RIGHT) {
             cursor.col++;
             kernel_set_cursor();
         }
