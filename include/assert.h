@@ -5,6 +5,6 @@
 
 #undef assert
 
-int kernel_assert(int statement, const char *format, ...);
+int kernel_assert(bool statement, const char *format, ...);
 
 #endif // ASSERT_H

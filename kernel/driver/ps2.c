@@ -7,6 +7,8 @@
 
 static unsigned int* const PS2_PHY = (unsigned int*)0xbfc09010;
 
+static KeyBoard_Callback keyboard_callback = nullptr;
+
 static volatile unsigned int keyboard_state = 0;
 #define CAPSLOCK_MASK 4
 #define NUMLOCK_MASK 2
@@ -40,71 +42,71 @@ signed char scantoascii_lowercase[] = {
 #ifdef PS2_DEBUG
 void print_wptr() {
     int row, col;
-    row = cursor_row;
-    col = cursor_col;
-    cursor_row = 19;
-    cursor_col = 32;
+    row = cursor.row;
+    col = cursor.col;
+    cursor.row = 19;
+    cursor.col = 32;
     kernel_printf("Wptr: %x\n", buffer_wptr);
-    cursor_row = row;
-    cursor_col = col;
+    cursor.row = row;
+    cursor.col = col;
 }
 
 void print_rptr() {
     int row, col;
-    row = cursor_row;
-    col = cursor_col;
-    cursor_row = 20;
-    cursor_col = 32;
+    row = cursor.row;
+    col = cursor.col;
+    cursor.row = 20;
+    cursor.col = 32;
     kernel_printf("Rptr: %x\n", buffer_rptr);
-    cursor_row = row;
-    cursor_col = col;
+    cursor.row = row;
+    cursor.col = col;
 }
 
 void print_buffer() {
     int row, col;
     int i;
-    row = cursor_row;
-    col = cursor_col;
-    cursor_row = 21;
-    cursor_col = 32;
+    row = cursor.row;
+    col = cursor.col;
+    cursor.row = 21;
+    cursor.col = 32;
     for (i = 0; i < 32; i++) {
         kernel_printf("%x ", ready[i]);
         if (7 == (i % 8)) {
-            cursor_col = 32;
-            cursor_row++;
+            cursor.col = 32;
+            cursor.row++;
         }
     }
     for (i = 0; i < 32; i++) {
         kernel_printf("%x ", buffer[i]);
         if (7 == (i % 8)) {
-            cursor_col = 32;
-            cursor_row++;
+            cursor.col = 32;
+            cursor.row++;
         }
     }
-    cursor_row = row;
-    cursor_col = col;
+    cursor.row = row;
+    cursor.col = col;
 }
 
 void print_curr_key(int key) {
     int row, col;
-    row = cursor_row;
-    col = cursor_col;
-    cursor_row = 18;
-    cursor_col = 32;
+    row = cursor.row;
+    col = cursor.col;
+    cursor.row = 18;
+    cursor.col = 32;
     kernel_printf("Key: %x\n", key);
-    cursor_row = row;
-    cursor_col = col;
+    cursor.row = row;
+    cursor.col = col;
 }
 
 void print_curr_char(int key) {
     int row, col;
-    row = cursor_row;
-    col = cursor_col;
-    cursor_row = 17;
-    cursor_col = 32;
+    row = cursor.row;
+    col = cursor.col;
+    cursor.row = 17;
+    cursor.col = 32;
     kernel_printf("Char: %c\n", key);
-    cursor_row = row;
-    cursor_col = col;
+    cursor.row = row;
+    cursor.col = col;
 }
 
 #endif  // ! PS2_DEBUG
@@ -120,6 +122,9 @@ void init_buffer() {
 }
 
 void init_ps2() {
+    keyboard_callback = nullptr;
+    keyboard_state = 0;
+
     init_buffer();
     register_interrupt_handler(2, ps2_handler);
     PS2_PHY[1] = -1;  // Enable ps/2 interrupt
@@ -187,11 +192,22 @@ void ps2_handler(unsigned int status, unsigned int cause, context* pt_context) {
                     keyboard_state &= ~ALT_MASK;
                     break;
             }
+
+            if(keyboard_callback) {
+                bool isUp = ((key_buffer >> 8) & 0xFF) == 0xF0;
+                if(isUp)
+                    key_buffer = ((key_buffer >> 16) << 8) | (key_buffer & 0xFF);
+                keyboard_callback(key_buffer, isUp);
+            }
+
             key_buffer = 0;
+            
         }
 
         ps2_ctrl_reg = PS2_PHY[1];
     }
+
+    
 }
 
 int kernel_getkey() {
@@ -239,6 +255,11 @@ int kernel_getchar() {
     print_curr_char(key);
 #endif  // ! PS2_DEBUG
     return key;
+}
+
+void register_keyboard_callback(KeyBoard_Callback callback)
+{
+    keyboard_callback = callback;
 }
 
 #pragma GCC pop_optimize

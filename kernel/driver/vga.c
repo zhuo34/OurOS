@@ -3,11 +3,6 @@
 
 #include <os/time.h>
 
-const int VGA_SCREEN_MAX_ROW = 32;
-const int VGA_SCREEN_MAX_COL = 128;
-const int VGA_DISPLAY_MAX_ROW = 28;
-const int VGA_DISPLAY_MAX_COL = 80;
-
 const uint BLANK = 0x000fff00;
 
 CursorInfo cursor = {
@@ -40,17 +35,18 @@ void kernel_clear_screen() {
 }
 
 void kernel_scroll_screen() {
+    uint offset = VGA_COMMAND_MAX_ROW * VGA_SCREEN_MAX_COL;
     kernel_memcpy(
         CHAR_VRAM, 
         CHAR_VRAM + VGA_SCREEN_MAX_COL, 
-        VGA_DISPLAY_MAX_ROW * VGA_SCREEN_MAX_COL * sizeof(int)
+        offset * sizeof(uint)
     );
-    // kernel_memset_uint(
-    //     // CHAR_VRAM + (VGA_DISPLAY_MAX_ROW - 2) * VGA_SCREEN_MAX_COL, 
-    //     CHAR_VRAM + offset, 
-    //     BLANK, 
-    //     VGA_SCREEN_MAX_COL
-    // );
+    kernel_memset_uint(
+        // CHAR_VRAM + (VGA_DISPLAY_MAX_ROW - 2) * VGA_SCREEN_MAX_COL, 
+        CHAR_VRAM + offset, 
+        BLANK, 
+        VGA_SCREEN_MAX_COL
+    );
 }
 
 int kernel_printf(const char* format, ...)
@@ -76,36 +72,36 @@ int kernel_printf_error(const char* format, ...)
 }
 
 
-int kernel_printf_color(int fgColor, int bgColorColor, const char *format, ...) {
+int kernel_printf_color(int fgColor, int bgColor, const char *format, ...) {
     va_list argList;
     va_start(argList, format);
 
-    int cnt = kernel_printf_argList(fgColor, bgColorColor, format, argList);
+    int cnt = kernel_printf_argList(fgColor, bgColor, format, argList);
 
     va_end(argList);
     return cnt;
 }
 
-int kernel_printf_argList(int fgColor, int bgColorColor, const char* format, va_list argList)
+int kernel_printf_argList(int fgColor, int bgColor, const char* format, va_list argList)
 {
     int cnt = 0;
     while (*format) {
         if (*format != '%') {
-            kernel_putchar(*format++, VGA_WHITE, VGA_BLACK);
+            kernel_putchar(*format++, fgColor, bgColor);
         } else {
             char type = *++format;
             if(type == 'c') {
                 char valch = va_arg(argList, int);
-                kernel_putchar(valch, VGA_WHITE, VGA_BLACK);
+                kernel_putchar(valch, fgColor, bgColor);
             } else if(type == 'd') {
                 int valint = va_arg(argList, int);
-                kernel_putint(valint, VGA_WHITE, VGA_BLACK);
+                kernel_putint(valint, fgColor, bgColor);
             } else if(type == 'x' || type == 'X') {
                 int valint = va_arg(argList, int);
-                kernel_puthex(valint, type == 'X', VGA_WHITE, VGA_BLACK);
+                kernel_puthex(valint, type == 'X', fgColor, bgColor);
             } else if(type == 's') {
                 char *valstr = va_arg(argList, char*);
-                kernel_putstring(valstr, VGA_WHITE, VGA_BLACK);
+                kernel_putstring(valstr, fgColor, bgColor);
             } else {
                 cnt = -1;
                 break;
@@ -124,9 +120,9 @@ int kernel_putchar(int ch, int fgColor, int bgColor) {
     if (ch == '\r')
         ;
     else if (ch == '\n') {
-        kernel_memset_uint(cursor_addr, BLANK, VGA_DISPLAY_MAX_COL - cursor.col);
+        // kernel_memset_uint(cursor_addr, BLANK, VGA_DISPLAY_MAX_COL - cursor.col);
         cursor.col = 0;
-        if (cursor.row == VGA_DISPLAY_MAX_ROW) {
+        if (cursor.row == VGA_COMMAND_MAX_ROW) {
             kernel_scroll_screen();
         } else {
             cursor.row ++;
@@ -207,7 +203,7 @@ int kernel_puthex(uint hex, bool isUpper, int fgColor, int bgColor) {
         while (hex) {
             char value = hex & 0xF;
             ptr--;
-            *ptr = HEX_MAP[value] + (isUpper && value > 9)? ('A' - 'a'): 0;
+            *ptr = HEX_MAP[value] + ((isUpper && value > 9)? ('A' - 'a'): 0);
             hex >>= 4;
         }
         kernel_putstring(ptr, fgColor, bgColor);
@@ -216,7 +212,7 @@ int kernel_puthex(uint hex, bool isUpper, int fgColor, int bgColor) {
 }
 
 void kernel_putchar_at(int ch, int row, int col) {
-    kernel_putchar_at_color(ch, VGA_BLACK, VGA_WHITE, row, col);
+    kernel_putchar_at_color(ch, VGA_WHITE, VGA_BLACK, row, col);
 }
 
 // 字符数据信息：0xBBBFFFCC --> BBB：背景颜色，FFF: 前景颜色，CC：字符值

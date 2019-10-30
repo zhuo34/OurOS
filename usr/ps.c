@@ -19,15 +19,32 @@ void test_syscall4() {
         "nop\n\t");
 }
 
+void callback(int keyCode, bool isUp) {
+    // kernel_printf("keyCode: 0x%x, isUp: %d\n", keyCode, isUp);
+    if(!isUp) {
+        if(keyCode == 0xE06B){ // left
+            cursor.col--;
+            kernel_set_cursor();
+        } else if(keyCode == 0xE074) { // right
+            cursor.col++;
+            kernel_set_cursor();
+        }
+    }
+    
+}
+
 void ps() {
     kernel_printf("Press any key to enter shell.\n");
     kernel_getchar();
     char c;
     ps_buffer_index = 0;
     ps_buffer[0] = 0;
-    kernel_clear_screen(31);
-    kernel_putstring("PowerShell\n", 0xfff, 0);
-    kernel_putstring("PS>", 0xfff, 0);
+    kernel_clear_screen();
+    kernel_printf("PowerShell\n");
+    kernel_printf("PS>");
+
+    register_keyboard_callback(callback);
+
     while (1) {
         c = kernel_getchar();
         if (c == '\n') {
@@ -39,7 +56,7 @@ void ps() {
             } else
                 parse_cmd();
             ps_buffer_index = 0;
-            kernel_putstring("PS>", 0xfff, 0);
+            kernel_printf("PS>");
         } else if (c == 0x08) {
             if (ps_buffer_index) {
                 ps_buffer_index--;
@@ -50,7 +67,7 @@ void ps() {
         } else {
             if (ps_buffer_index < 63) {
                 ps_buffer[ps_buffer_index++] = c;
-                kernel_putchar(c, 0xfff, 0);
+                kernel_printf("%c", c);
             }
         }
     }
@@ -77,7 +94,7 @@ void parse_cmd() {
     if (ps_buffer[0] == 0) {
         return;
     } else if (kernel_strcmp(ps_buffer, "clear") == 0) {
-        kernel_clear_screen(31);
+        kernel_clear_screen();
     } else if (kernel_strcmp(ps_buffer, "echo") == 0) {
         kernel_printf("%s\n", param);
     } else if (kernel_strcmp(ps_buffer, "gettime") == 0) {

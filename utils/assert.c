@@ -1,8 +1,8 @@
 #include <assert.h>
 
-int kernel_assert(int statement, const char *format, ...) {
+int kernel_assert(bool statement, const char *format, ...) {
     int cnt = 0;
-    if (statement != 1) {
+    if (!statement) {
         kernel_printf_error("[ASSERT ERROR]: %s\n");
 
         va_list argList;

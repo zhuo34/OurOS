@@ -43,10 +43,11 @@ void time_handler(unsigned int status, unsigned int cause, context *sp) {
         : "=r"(ticks_low), "=r"(ticks_high));
     get_time_string(ticks_high, ticks_low, buffer);
 
+    int begin = 59;
     for (i = 0; i < 11; i++)
-        kernel_putchar_at(day[i], 29, 61 + i);
+        kernel_putchar_at(day[i], VGA_DISPLAY_MAX_ROW, begin + i);
     for (i = 0; i < 8; i++)
-        kernel_putchar_at(buffer[i], 29, 72 + i);
+        kernel_putchar_at(buffer[i], VGA_DISPLAY_MAX_ROW, begin + 11 + i);
 
     asm volatile("mtc0 $zero, $9");
 }

@@ -1,6 +1,9 @@
 #ifndef OS_TYPE_H
 #define OS_TYPE_H
 
+#define null    0
+#define nullptr 0
+
 typedef unsigned char   u8;
 typedef unsigned short  u16;
 typedef unsigned long   u32;

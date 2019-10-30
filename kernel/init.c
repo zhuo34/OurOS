@@ -26,7 +26,7 @@ void machine_info() {
     kernel_printf("\n%s\n", "412-UNIX V1.0");
     row = cursor.row;
     col = cursor.col;
-    cursor.row = 29;
+    cursor.row = VGA_DISPLAY_MAX_ROW - 1;
     kernel_printf("%s", "Created by Dorm 412 Block 32, Yuquan Campus, Zhejiang University.");
     cursor.row = row;
     cursor.col = col;
@@ -35,7 +35,7 @@ void machine_info() {
 
 void init_kernel() {
     // init_done = 0;
-    kernel_clear_screen(31);
+    kernel_clear_screen();
     // Exception
     init_exception();
     // Page table

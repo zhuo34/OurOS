@@ -18,6 +18,12 @@ typedef struct
 }CursorInfo;
 extern CursorInfo cursor;
 
+#define VGA_SCREEN_MAX_ROW      32
+#define VGA_SCREEN_MAX_COL      128
+#define VGA_COMMAND_MAX_ROW     26
+#define VGA_DISPLAY_MAX_ROW     28
+#define VGA_DISPLAY_MAX_COL     80
+
 // 提供给外部的接口
 void init_vga();
 

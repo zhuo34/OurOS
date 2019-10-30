@@ -7,15 +7,15 @@ int log(int status, const char *format, ...) {
     if(status == LOG_OK)
         kernel_printf_color(VGA_GREEN,	VGA_BLACK, "[ O K ] ");
     else if(status == LOG_FAIL)
-        kernel_printf_color(VGA_RED,	VGA_BLACK, "[FAIL] ");
+        kernel_printf_color(VGA_RED,	VGA_BLACK, "[FAIL ] ");
     else if(status == LOG_START)
-		kernel_printf_color(VGA_BLUE, 	VGA_BLACK, "[START] ");
+		kernel_printf_color(VGA_YELLOW, VGA_BLACK, "[START] ");
 	else if(status == LOG_END)
-		kernel_printf_color(VGA_BLUE, 	VGA_BLACK, "[ END ] ");
+		kernel_printf_color(VGA_YELLOW, VGA_BLACK, "[ END ] ");
 	else if(status == LOG_STEP)
-		kernel_printf_color(VGA_WHITE, 	VGA_BLACK, "[STEP] ");
+		kernel_printf_color(VGA_WHITE, 	VGA_BLACK, "[STEP ] ");
 	else
-		kernel_assert(0, "[LOG]: Undefined log status.");
+		kernel_assert(false, "[LOG]: Undefined log status.");
 
     // print time
 	char time_buf[9];
