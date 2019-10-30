@@ -1,5 +1,5 @@
-#ifndef _INTR_H
-#define _INTR_H
+#ifndef INTR_H
+#define INTR_H
 
 #include <os/pc.h>
 
@@ -13,4 +13,4 @@ int disable_interrupts();
 void do_interrupts(unsigned int status, unsigned int cause, context* sp);
 void register_interrupt_handler(int index, intr_fn fn);
 
-#endif
+#endif // INTR_H

@@ -1,6 +1,6 @@
-#ifndef _SYSCALL4_H
-#define _SYSCALL4_H
+#ifndef SYSCALL4_H
+#define SYSCALL4_H
 
 void syscall4(unsigned int status, unsigned int cause, context* pt_context);
 
-#endif  // ! _SYSCALL4_H
+#endif  // SYSCALL4_H

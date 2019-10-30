@@ -1,5 +1,5 @@
-#ifndef _ARCH_H
-#define _ARCH_H
+#ifndef ARCH_H
+#define ARCH_H
 
 //	machine params
 
@@ -46,4 +46,4 @@ extern volatile unsigned int kernel_sp;
 
 unsigned int get_phymm_size();
 
-#endif
+#endif // ARCH_H

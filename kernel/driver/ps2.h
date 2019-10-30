@@ -1,5 +1,5 @@
-#ifndef _PS2_H
-#define _PS2_H
+#ifndef PS2_H
+#define PS2_H
 
 #include <driver/ps2.h>
 
@@ -11,6 +11,6 @@ void print_rptr();
 void print_buffer();
 void print_curr_key(int key);
 void print_curr_char(int key);
-#endif  // ! PS2_DEBUG
+#endif // PS2_DEBUG
 
-#endif
+#endif // PS2_H
