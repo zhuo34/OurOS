@@ -49,6 +49,16 @@ void kernel_scroll_screen() {
     );
 }
 
+int kernel_putchar(char ch)
+{
+    kernel_putch(ch, VGA_BLACK, VGA_WHITE);
+}
+
+int kernel_puts(const char* string)
+{
+    kernel_putstring(string, VGA_BLACK, VGA_WHITE);
+}
+
 int kernel_printf(const char* format, ...)
 {
     va_list argList;
@@ -87,12 +97,12 @@ int kernel_printf_argList(int fgColor, int bgColor, const char* format, va_list 
     int cnt = 0;
     while (*format) {
         if (*format != '%') {
-            kernel_putchar(*format++, fgColor, bgColor);
+            kernel_putch(*format++, fgColor, bgColor);
         } else {
             char type = *++format;
             if(type == 'c') {
                 char valch = va_arg(argList, int);
-                kernel_putchar(valch, fgColor, bgColor);
+                kernel_putch(valch, fgColor, bgColor);
             } else if(type == 'd') {
                 int valint = va_arg(argList, int);
                 kernel_putint(valint, fgColor, bgColor);
@@ -114,7 +124,7 @@ int kernel_printf_argList(int fgColor, int bgColor, const char* format, va_list 
     return cnt;
 }
 
-int kernel_putchar(int ch, int fgColor, int bgColor) {
+int kernel_putch(int ch, int fgColor, int bgColor) {
     uint* cursor_addr = (uint*)(CHAR_VRAM + cursor.row * VGA_SCREEN_MAX_COL + cursor.col);
     
     if (ch == '\r')
@@ -127,12 +137,12 @@ int kernel_putchar(int ch, int fgColor, int bgColor) {
         } else {
             cursor.row ++;
 #ifdef VGA_CALIBRATE
-            kernel_putchar(' ', fgColor, bgColor);
+            kernel_putch(' ', fgColor, bgColor);
 #endif  // VGA_CALIBRATE
         }
     } else if (ch == '\t') {
         if (cursor.col >= VGA_DISPLAY_MAX_COL - 4) {
-            kernel_putchar('\n', VGA_BLACK, VGA_BLACK);
+            kernel_putch('\n', VGA_BLACK, VGA_BLACK);
         } else {
             kernel_memset_uint(cursor_addr, BLANK, 4 - cursor.col & 0x3);
             // tab 4 制表位对齐
@@ -140,7 +150,7 @@ int kernel_putchar(int ch, int fgColor, int bgColor) {
         }
     } else {
         if (cursor.col == VGA_DISPLAY_MAX_COL) {
-            kernel_putchar('\n', 0, 0);
+            kernel_putch('\n', 0, 0);
         }
         kernel_putchar_at_color(ch, fgColor, bgColor, cursor.row, cursor.col);
         cursor.col++;
@@ -154,7 +164,7 @@ int kernel_putstring(const char *string, int fgColor, int bgColor) {
     int ret = 0;
     while (*string) {
         ret ++;
-        kernel_putchar(*string++, fgColor, bgColor);
+        kernel_putch(*string++, fgColor, bgColor);
     }
     return ret;
 }
@@ -173,7 +183,7 @@ int kernel_putint(int num, int fgColor, int bgColor) {
     }
     
     if (num == 0) {
-        kernel_putchar('0', fgColor, bgColor);
+        kernel_putchar('0');
     } else {
         while (num) {
             ptr--;
@@ -198,7 +208,7 @@ int kernel_puthex(uint hex, bool isUpper, int fgColor, int bgColor) {
     buffer[11] = '\0';
 
     if (hex == 0) {
-        kernel_putchar('0', fgColor, bgColor);
+        kernel_putch('0', fgColor, bgColor);
     } else {
         while (hex) {
             char value = hex & 0xF;

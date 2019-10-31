@@ -10,6 +10,6 @@
 #include <os/utils.h>
 
 // 从标准输入获取一行
-int our_gets(char* str, int length);
+bool read_line(char* str, int length);
 
 #endif

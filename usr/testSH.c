@@ -1,7 +1,7 @@
 // 用于shell的单元测试
 
-#include "test.h"
-#include "shell.h"
+#include "testSH.h"
+// #include "shell.h"
 
 int main()
 {

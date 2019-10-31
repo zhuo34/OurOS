@@ -7,19 +7,19 @@ void osh()
 {
     // 初始化
     char cmd[MAX_COMMAND_LENGTH];
-    void clearScreen();
+    kernel_clear_screen();
     // 原ZJUNIX怎么还PowerShell的，这Windows遗毒是有多深
-    kernel_putstring("OurShell Starts!\n\n", 0xff0, 0);
+    kernel_puts("OurShell Starts!\n\n");
 
-    kernel_putstring("osh>", 0x00f, 0);
+    kernel_puts("osh>");
     while (1)
     {
         // 从标准输入读入，传给解析器解析
-        if (our_gets(cmd, MAX_COMMAND_LENGTH))
+        if (read_line(cmd, MAX_COMMAND_LENGTH))
         {
             parse_cmd(cmd);
         }
-        kernel_putstring("osh>", 0x00f, 0);
+        kernel_puts("osh>");
     }
 }
 
@@ -34,9 +34,9 @@ void parse_cmd(char* cmd)
     int status = 0;
 
     // 目前为单个命令，如果支持多条命令，也用链表
-    struct command* thisCmd = (struct command*)malloc(sizeof(struct command));
+    struct command* thisCmd = (struct command*)kernel_malloc(sizeof(struct command));
     // 参数链表
-    thisCmd->argList = (struct argumentNode*)malloc(sizeof(struct argumentNode));
+    thisCmd->argList = (struct argumentNode*)kernel_malloc(sizeof(struct argumentNode));
     struct argumentNode* thisArg = thisCmd->argList;
     thisArg->nextArg = (void*)0;
     
@@ -55,7 +55,7 @@ void parse_cmd(char* cmd)
             }
             else
             {
-                kernel_putstring("argument too long!\n", 0xf00, 0);
+                kernel_printf_error("argument too long!\n");
                 break;
             }
         }
@@ -112,12 +112,12 @@ void parse_cmd(char* cmd)
 
 void exec_cmd_pre(struct command* cmd)
 {
-    int pid = our_fork();
+    int pid = kernel_fork();
     switch(pid)
     {
         case -1:
-            kernel_putstring("fork fail\n\n", 0xf00, 0);
-            exit(1);
+            kernel_printf_error("fork fail\n\n");
+            kernel_exit(1);
         // 暂时不考虑后台命令
         // 子进程
         case 0:
@@ -139,12 +139,12 @@ void exec_cmd_pre(struct command* cmd)
 void exec_cmd(struct command* cmd)
 {
     // 内建命令所用函数的接收参数统一为struct command*
-    kernel_putstring("command is running\n\n", 0xf00, 0);
+    kernel_printf_error("command is running\n\n");
 }
 
 struct argumentNode* newArg(struct argumentNode* arg)
 {
-    arg->nextArg = (struct argumentNode*)malloc(sizeof(struct argumentNode));
+    arg->nextArg = (struct argumentNode*)kernel_malloc(sizeof(struct argumentNode));
     struct argumentNode* thisArg = arg->nextArg;
     thisArg->nextArg = (void*)0;
     return thisArg;
@@ -152,3 +152,7 @@ struct argumentNode* newArg(struct argumentNode* arg)
 
 // 原ZJUNIX里有的这里没有的：一堆内建命令，每个实现为一个函数
 // 还要添加：进程表初始化、新建、删除、查找的函数
+
+int kernel_fork() { return 1; }
+void kernel_exit(int code) { }
+void* kernel_malloc(uint size) { return nullptr; }

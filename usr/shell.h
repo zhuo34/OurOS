@@ -31,19 +31,24 @@ struct command
 struct argumentNode* newArg(struct argumentNode* arg);
 
 // 进程表，放进共享内存里
-typedef struct job* jobNode;
-struct job
-{
-    pid_t pid;
-    char name[MAX_ARGUMENT_LENGTH];
-    jobStatus status;
-    jobNode lastJob;
-    jobNode nextJob;
-};
+// typedef struct job* jobNode;
+// struct job
+// {
+//     pid_t pid;
+//     char name[MAX_ARGUMENT_LENGTH];
+//     jobStatus status;
+//     jobNode lastJob;
+//     jobNode nextJob;
+// };
 
 void osh();
 void parse_cmd(char* cmd);
 void exec_cmd_pre(struct command* cmd);
 void exec_cmd(struct command* cmd);
+
+// unimplement methods
+int kernel_fork();
+void kernel_exit(int code);
+void* kernel_malloc(uint size);
 
 #endif // PS_H

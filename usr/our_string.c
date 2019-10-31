@@ -1,7 +1,7 @@
 #include "our_string.h"
 
 // 从标准输入获取一行
-int our_gets(char* str, int length)
+bool read_line(char* str, int length)
 {
     int c;
     int index = 0;
@@ -13,10 +13,10 @@ int our_gets(char* str, int length)
         {
             // 确保字符串结尾是'\0'
             str[index] = '\0';
-            return 1;
+            return true;
         }
         // 回退，删除一个字符，将其从数组中删除，也从屏幕上消失
-        else if (0x08 == c)
+        else if ('\b' == c)
         {
             if (index)
             {
@@ -31,7 +31,7 @@ int our_gets(char* str, int length)
         // 输入了EOF，现在应该还遇不到
         else if (-1 == c)
         {
-            return 0;
+            return false;
         }
         // 输入一般字符，存在字符串中并显示出来
         else
@@ -40,7 +40,7 @@ int our_gets(char* str, int length)
             if (index < length - 1)
             {
                 str[index++] = c;
-                kernel_putchar(c, 0xfff, 0);
+                kernel_putchar(c);
             }
         }
     }

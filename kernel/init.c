@@ -19,6 +19,7 @@
 #include <os/syscall.h>
 
 #include "../usr/ps.h"
+#include "../usr/shell.h"
 
 void machine_info() {
     int row;
@@ -78,4 +79,5 @@ void init_kernel() {
     *GPIO_SEG = 0x11223344;
 
     ps();
+    // osh();
 }

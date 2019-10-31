@@ -31,6 +31,9 @@ void kernel_set_cursor();
 void kernel_clear_screen();
 void kernel_scroll_screen();
 
+int kernel_putchar(char ch);
+int kernel_puts(const char* string);
+
 int kernel_printf(const char* format, ...);
 int kernel_printf_error(const char* format, ...);
 int kernel_printf_color(int fgColor, int bgColor, const char* format, ...);
@@ -40,7 +43,7 @@ void kernel_putchar_at_color(int ch, int fgColor, int bgColor, int row, int col)
 
 // 内部使用
 int kernel_printf_argList(int fgColor, int bgColor, const char* format, va_list argList);
-int kernel_putchar(int ch, int fgColor, int bgColor);
+int kernel_putch(int ch, int fgColor, int bgColor);
 int kernel_putstring(const char* string, int fgColor, int bgColor);
 int kernel_putint(int num, int fgColor, int bgColor);
 int kernel_puthex(uint hex, bool isUpper, int fgColor, int bgColor);

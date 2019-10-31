@@ -54,7 +54,7 @@ void ps() {
                 ps_buffer[0] = 0;
                 kernel_printf("\nPowerShell exit.\n");
             } else
-                parse_cmd();
+                ps_parse_cmd();
             ps_buffer_index = 0;
             kernel_printf("PS>");
         } else if (c == 0x08) {
@@ -73,11 +73,11 @@ void ps() {
     }
 }
 
-void parse_cmd() {
+void ps_parse_cmd() {
     unsigned int result = 0;
     char dir[32];
     char c;
-    kernel_putchar('\n', 0, 0);
+    kernel_putchar('\n');
     char sd_buffer[8192];
     int i = 0;
     char *param;
@@ -107,21 +107,21 @@ void parse_cmd() {
         for (i = 0; i < 512; i++)
             sd_buffer[i] = i;
         sd_write_block(sd_buffer, 7, 1);
-        kernel_putstring("sdwi\n", 0xfff, 0);
+        kernel_puts("sdwi\n");
     } else if (kernel_strcmp(ps_buffer, "sdr") == 0) {
         sd_read_block(sd_buffer, 7, 1);
         for (i = 0; i < 512; i++) {
             kernel_printf("%d ", sd_buffer[i]);
         }
-        kernel_putchar('\n', 0xfff, 0);
+        kernel_putchar('\n');
     } else if (kernel_strcmp(ps_buffer, "sdwz") == 0) {
         for (i = 0; i < 512; i++) {
             sd_buffer[i] = 0;
         }
         sd_write_block(sd_buffer, 7, 1);
-        kernel_putstring("sdwz\n", 0xfff, 0);
+        kernel_puts("sdwz\n");
     } else {
-        kernel_putstring(ps_buffer, 0xfff, 0);
-        kernel_putstring(": command not found\n", 0xfff, 0);
+        kernel_puts(ps_buffer);
+        kernel_puts(": command not found\n");
     }
 }

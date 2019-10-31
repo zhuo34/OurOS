@@ -4,7 +4,7 @@
 #include <os/type.h>
 
 void ps();
-void parse_cmd();
+void ps_parse_cmd();
 
 void callback(int keyCode, bool pressDown);
 
