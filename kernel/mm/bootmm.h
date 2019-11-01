@@ -8,6 +8,6 @@ uint set_bootmm_info(bootmm_struct *mm, uint index, uint addr_start, uint length
 uint delete_bootmm_info(bootmm_struct *mm, uint index);
 uint split_bootmm_info(bootmm_struct *mm, uint index, uint split_addr);
 
-uchar* find_pages(uint page_cnt, uint pfn_start, uint pfn_end, uint pfn_align);
+uint find_pages(bootmm_struct *mm, uint page_cnt, uint pfn_start, uint pfn_end, uint pfn_align);
 
 #endif // BOOTMM_H

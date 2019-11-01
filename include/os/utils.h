@@ -3,9 +3,9 @@
 
 #include <os/type.h>
 
-#define UPPER_ALLIGN(x, y) (((x)+((y)-1)) & ~((y)-1))
-#define MAX(x, y) (((x)>(y))?(x):(y))
-#define MIN(x, y) (((x)<(y))?(x):(y))
+#define upper_align(x, y) (((x)+((y)-1)) & ~((y)-1))
+#define max(x, y) (((x)>(y))?(x):(y))
+#define min(x, y) (((x)<(y))?(x):(y))
 
 #define container_of(ptr, type, member) ((type*)((char*)ptr - (char*)&(((type*)0)->member)))
 
