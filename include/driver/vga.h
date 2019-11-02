@@ -1,7 +1,7 @@
 #ifndef DRIVER_VGA_H
 #define DRIVER_VGA_H
 
-#include <os/utils.h>
+#include <ouros/utils.h>
 
 #define VGA_RED     0x00F
 #define VGA_GREEN   0x0F0

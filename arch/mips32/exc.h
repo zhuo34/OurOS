@@ -1,7 +1,7 @@
 #ifndef EXC_H
 #define EXC_H
 
-#include <os/pc.h>
+#include <ouros/pc.h>
 
 typedef void (*exc_fn)(unsigned int, unsigned int, context*);
 

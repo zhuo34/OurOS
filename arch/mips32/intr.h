@@ -1,7 +1,7 @@
 #ifndef INTR_H
 #define INTR_H
 
-#include <os/pc.h>
+#include <ouros/pc.h>
 
 typedef void (*intr_fn)(unsigned int, unsigned int, context*);
 

@@ -7,11 +7,11 @@
 #include <driver/ps2.h>
 #include <driver/sd.h>
 #include <driver/vga.h>
-#include <os/bootmm.h>
-#include <os/buddy.h>
-#include <os/slab.h>
-#include <os/time.h>
-#include <os/utils.h>
+#include <ouros/bootmm.h>
+#include <ouros/buddy.h>
+#include <ouros/slab.h>
+#include <ouros/time.h>
+#include <ouros/utils.h>
 
 #define MAX_COMMAND_LENGTH 64
 #define MAX_ARGUMENT_LENGTH 8

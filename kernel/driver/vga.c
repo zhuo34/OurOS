@@ -1,7 +1,7 @@
 #include "vga.h"
 #include <arch.h>
 
-#include <os/time.h>
+#include <ouros/time.h>
 
 const uint BLANK = 0x000fff00;
 

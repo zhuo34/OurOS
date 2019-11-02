@@ -1,7 +1,7 @@
 #ifndef ARCH_H
 #define ARCH_H
 
-#include <os/type.h>
+#include <ouros/type.h>
 
 // machine parameters
 #define MACHINE_MMSIZE (128 * 1024 * 1024)		// 128MB

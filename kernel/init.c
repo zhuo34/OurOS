@@ -5,18 +5,18 @@
 
 #include <driver/ps2.h>
 #include <driver/vga.h>
-#include <os/time.h>
+#include <ouros/time.h>
 
-#include <os/log.h>
+#include <ouros/log.h>
 
-#include <os/pc.h>
-#include <os/slab.h>
-#include <os/bootmm.h>
-#include <os/buddy.h>
+#include <ouros/pc.h>
+#include <ouros/slab.h>
+#include <ouros/bootmm.h>
+#include <ouros/buddy.h>
 
-#include <os/fs/fat.h>
+#include <ouros/fs/fat.h>
 
-#include <os/syscall.h>
+#include <ouros/syscall.h>
 
 #include "../usr/ps.h"
 #include "../usr/shell.h"

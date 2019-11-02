@@ -1,7 +1,7 @@
 #ifndef BOOTMM_H
 #define BOOTMM_H
 
-#include <os/bootmm.h>
+#include <ouros/bootmm.h>
 
 uint insert_bootmm_info(bootmm_struct *mm, uint addr_start, uint length, uint type);
 uint set_bootmm_info(bootmm_struct *mm, uint index, uint addr_start, uint length, uint type);

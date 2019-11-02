@@ -1,7 +1,7 @@
 #ifndef TIME_H
 #define TIME_H
 #include <intr.h>
-#include <os/time.h>
+#include <ouros/time.h>
 
 void get_time_string(unsigned int ticks_high, unsigned int ticks_low, char *buf);
 

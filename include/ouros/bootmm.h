@@ -1,8 +1,8 @@
-#ifndef OS_BOOTMM_H
-#define OS_BOOTMM_H
+#ifndef OUROS_BOOTMM_H
+#define OUROS_BOOTMM_H
 
 #include <arch.h>
-#include <os/type.h>
+#include <ouros/type.h>
 
 #define MAX_MMINFO_NUM	16
 #define PAGE_SIZE		4096
@@ -39,4 +39,4 @@ void init_bootmm();
 void* bootmm_alloc_page(uint size, uint type, uint addr_align);
 void bootmm_free_page(void *addrr, uint size);
 
-#endif // OS_BOOTMM_H
+#endif // OUROS_BOOTMM_H

@@ -1,5 +1,5 @@
 #include <driver/vga.h>
-#include <os/utils.h>
+#include <ouros/utils.h>
 
 void* kernel_memcpy(void* dst, void* src, int len) {
     char* dststr = dst;

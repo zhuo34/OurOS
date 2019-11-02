@@ -2,11 +2,11 @@
  * @Author: Zhuo Chen
  * @Github: https://github.com/dmdecz
  * @Description: 
- * @FilePath: /OurOS/kernel/mm/bootmm.c
+ * @FilePath: /OurOs/kernel/mm/bootmm.c
  */
-#include "os/bootmm.h"
-#include <os/utils.h>
-#include <os/assert.h>
+#include "bootmm.h"
+#include <ouros/utils.h>
+#include <ouros/assert.h>
 
 bootmm_struct bootmm;
 // uchar bootmm_map[MACHINE_MMSIZE >> PAGE_SHIFT];

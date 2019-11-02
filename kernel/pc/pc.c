@@ -1,4 +1,4 @@
-#include <os/pc.h>
+#include <ouros/pc.h>
 
 void init_pc()
 {

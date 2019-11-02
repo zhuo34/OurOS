@@ -1,4 +1,4 @@
-#include <os/slab.h>
+#include <ouros/slab.h>
 
 void init_slab()
 {

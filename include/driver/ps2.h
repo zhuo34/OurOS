@@ -2,7 +2,7 @@
 #define DRIVER_PS2
 
 #include <intr.h>
-#include <os/pc.h>
+#include <ouros/pc.h>
 
 #define KEY_CAPS_LOCK       0x58
 #define KEY_LEFT_SHIFT      0x12

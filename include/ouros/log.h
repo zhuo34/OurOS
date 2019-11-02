@@ -1,5 +1,5 @@
-#ifndef OS_LOG_H
-#define OS_LOG_H
+#ifndef OUROS_LOG_H
+#define OUROS_LOG_H
 
 #include <driver/vga.h>
 
@@ -9,4 +9,4 @@ typedef enum {
 
 int log(int status, const char *format, ...);
 
-#endif // OS_LOG_H
+#endif // OUROS_LOG_H

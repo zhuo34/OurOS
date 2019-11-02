@@ -1,6 +1,6 @@
 
 #include <arch.h>
-#include <os/syscall.h>
+#include <ouros/syscall.h>
 #include <driver/vga.h>
 
 void syscall4(unsigned int status, unsigned int cause, context* pt_context) {

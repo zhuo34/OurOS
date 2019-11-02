@@ -1,9 +1,10 @@
-#ifndef OS_UITILS_H
-#define OS_UITILS_H
+#ifndef OUROS_UITILS_H
+#define OUROS_UITILS_H
 
-#include <os/type.h>
+#include <ouros/type.h>
 
 #define upper_align(x, y) (((x)+((y)-1)) & ~((y)-1))
+#define lower_align(x, y) ((x) & ~((y)-1))
 #define max(x, y) (((x)>(y))?(x):(y))
 #define min(x, y) (((x)<(y))?(x):(y))
 
@@ -31,4 +32,4 @@ typedef unsigned char* va_list;
 #define va_arg(ap, t) (*(t*)((ap += _INTSIZEOF(t)) - _INTSIZEOF(t)))
 #define va_end(ap) (ap = (va_list)0)
 
-#endif // OS_UITILS_H
+#endif // OUROS_UITILS_H
