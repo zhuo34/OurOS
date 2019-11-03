@@ -2,6 +2,7 @@
 #define BUDDY_H
 
 #include <ouros/buddy.h>
+#include <ouros/bootmm.h>
 
 extern bootmm_sys bootmm;
 
