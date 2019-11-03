@@ -1,9 +1,9 @@
 #include <driver/vga.h>
 #include <ouros/utils.h>
 
-void* kernel_memcpy(void* dst, void* src, int len) {
-    char* dststr = dst;
-    char* srcstr = src;
+void* kernel_memcpy(void* dst, void* src, uint len) {
+    Byte* dststr = dst;
+    Byte* srcstr = src;
     while (len--) {
         *dststr = *srcstr;
         dststr++;
@@ -23,7 +23,7 @@ void* kernel_memset(void* dst, uchar data, uint len) {
 }
 #pragma GCC pop_options
 
-uint* kernel_memset_uint(void* dst, uint value, int len) {
+uint* kernel_memset_uint(void* dst, uint value, uint len) {
     uint *p = (uint*)dst;
     while (len--)
         *p++ = value;

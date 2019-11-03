@@ -2,8 +2,8 @@
 
 #include <driver/sd.h>
 
-#include <os/log.h>
-#include <os/error.h>
+#include <ouros/log.h>
+#include <ouros/error.h>
 #include <assert.h>
 
 static 	MBR 	*sdCard_MBR;

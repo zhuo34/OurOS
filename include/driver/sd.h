@@ -1,7 +1,7 @@
 #ifndef DRIVER_SD_H
 #define DRIVER_SD_H
 
-#include <os/type.h>
+#include <ouros/type.h>
 
 #define SECSIZE 	(1 << 9)
 #define SECSHIFT 	9

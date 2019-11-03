@@ -1,7 +1,7 @@
 #ifndef _FS_H_
 #define _FS_H_
 
-#include <os/fs/fs.h>
+#include <ouros/fs/fs.h>
 
 #define 	MAX_PAR_COUNT 		4
 #define 	SECTOR_SIZE 		512

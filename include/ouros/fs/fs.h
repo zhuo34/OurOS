@@ -1,7 +1,7 @@
 #ifndef _OS_FS_H_
 #define _OS_FS_H_
 
-#include <os/type.h>
+#include <ouros/type.h>
 
 typedef struct _list_head 			List_Head;
 typedef struct _super_block 		Super_Block;
