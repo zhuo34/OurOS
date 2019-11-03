@@ -1,6 +1,6 @@
-#include <assert.h>
-#include <os/log.h>
-#include <os/time.h>
+#include <ouros/assert.h>
+#include <ouros/log.h>
+#include <ouros/time.h>
 
 int log(int status, const char *format, ...) {
     // print status

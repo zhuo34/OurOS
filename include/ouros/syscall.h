@@ -1,7 +1,7 @@
-#ifndef OS_SYSCALL_H
-#define OS_SYSCALL_H
+#ifndef OUROS_SYSCALL_H
+#define OUROS_SYSCALL_H
 
-#include <os/pc.h>
+#include <ouros/pc.h>
 
 typedef void (*sys_fn)(unsigned int status, unsigned int cause, context* pt_context);
 
@@ -11,4 +11,4 @@ void init_syscall();
 void syscall(unsigned int status, unsigned int cause, context* pt_context);
 void register_syscall(int index, sys_fn fn);
 
-#endif // OS_SYSCALL_H
+#endif // OUROS_SYSCALL_H

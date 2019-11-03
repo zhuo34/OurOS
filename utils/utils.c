@@ -1,5 +1,5 @@
 #include <driver/vga.h>
-#include <os/utils.h>
+#include <ouros/utils.h>
 
 void* kernel_memcpy(void* dst, void* src, int len) {
     char* dststr = dst;
@@ -14,19 +14,11 @@ void* kernel_memcpy(void* dst, void* src, int len) {
 
 #pragma GCC push_options
 #pragma GCC optimize("O2")
-void* kernel_memset(void* dst, int b, int len) {
-#ifdef MEMSET_DEBUG
-    kernel_printf("memset:%x,%x,len%x,", (int)dst, b, len);
-#endif  // ! MEMSET_DEBUG
-    char content = b ? -1 : 0;
-    char* dststr = dst;
+void* kernel_memset(void* dst, uchar data, uint len) {
+    uchar *p_dst = dst;
     while (len--) {
-        *dststr = content;
-        dststr++;
+        *p_dst++ = data;
     }
-#ifdef MEMSET_DEBUG
-    kernel_printf("%x\n", (int)dststr);
-#endif  // ! MEMSET_DEBUG
     return dst;
 }
 #pragma GCC pop_options
@@ -94,4 +86,16 @@ void kernel_serial_putc(char c) {
 
 unsigned int is_bound(unsigned int val, unsigned int bound) {
     return !(val & (bound - 1));
+}
+
+uint get_low_bits(uint src, uint n_bit)
+{
+    if (n_bit > 32) {
+        return src;
+    }
+    uint mask = 0;
+    for (uint i = 0; i < n_bit; i++) {
+        mask = (mask << 1) + 1;
+    }
+    return src & mask;
 }

@@ -1,5 +1,5 @@
 #include <exc.h>
-#include <os/syscall.h>
+#include <ouros/syscall.h>
 #include "syscall4.h"
 
 sys_fn syscalls[256];

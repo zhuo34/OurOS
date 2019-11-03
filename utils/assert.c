@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <ouros/assert.h>
 
 int kernel_assert(bool statement, const char *format, ...) {
     int cnt = 0;

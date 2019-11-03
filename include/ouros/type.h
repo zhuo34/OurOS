@@ -1,5 +1,5 @@
-#ifndef OS_TYPE_H
-#define OS_TYPE_H
+#ifndef OUROS_TYPE_H
+#define OUROS_TYPE_H
 
 #define NULL    0
 #define null    0
@@ -22,4 +22,4 @@ typedef enum {
     false, true
 } bool;
 
-#endif // OS_TYPE_H
+#endif // OUROS_TYPE_H

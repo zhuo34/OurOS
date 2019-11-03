@@ -1,7 +1,7 @@
 #include "exc.h"
 
 #include <driver/vga.h>
-#include <os/pc.h>
+#include <ouros/pc.h>
 
 #pragma GCC push_options
 #pragma GCC optimize("O0")

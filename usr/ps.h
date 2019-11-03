@@ -1,7 +1,7 @@
 #ifndef PS_H
 #define PS_H
 
-#include <os/type.h>
+#include <ouros/type.h>
 
 void ps();
 void ps_parse_cmd();

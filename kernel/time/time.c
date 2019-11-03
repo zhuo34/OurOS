@@ -1,5 +1,5 @@
 #include "time.h"
-#include <assert.h>
+#include <ouros/assert.h>
 #include <driver/vga.h>
 #include <intr.h>
 

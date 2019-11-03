@@ -1,7 +1,7 @@
-#ifndef OS_PC_H
-#define OS_PC_H
+#ifndef OUROS_PC_H
+#define OUROS_PC_H
 
-#include <os/type.h>
+#include <ouros/type.h>
 
 typedef struct regs_context {
     u32 epc;
@@ -17,4 +17,4 @@ typedef struct regs_context {
 
 void init_pc();
 
-#endif  // OS_PC_H
+#endif  // OUROS_PC_H
