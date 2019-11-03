@@ -14,7 +14,7 @@
 #include <os/bootmm.h>
 #include <os/buddy.h>
 
-#include <os/fs/fat.h>
+#include <os/fs/fs.h>
 
 #include <os/syscall.h>
 

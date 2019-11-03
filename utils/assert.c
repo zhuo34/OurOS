@@ -3,7 +3,7 @@
 int kernel_assert(bool statement, const char *format, ...) {
     int cnt = 0;
     if (!statement) {
-        kernel_printf_error("[ASSERT ERROR]: %s\n");
+        kernel_printf_error("[ASSERT ERROR]:\n");
 
         va_list argList;
         va_start(argList, format);

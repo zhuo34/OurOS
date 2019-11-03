@@ -11,7 +11,7 @@
 
 void* kernel_memcpy(void* dst, void* src, int len);
 void* kernel_memset(void* dst, int b, int len);
-uint* kernel_memset_uint(uint* dst, uint value, int len);
+uint* kernel_memset_uint(void* dst, uint value, int len);
 int kernel_strcmp(const char* dst, const char* src);
 int pow(int x, int z);
 void kernel_cache(unsigned int block_index);

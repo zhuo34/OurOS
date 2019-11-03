@@ -51,12 +51,12 @@ void kernel_scroll_screen() {
 
 int kernel_putchar(char ch)
 {
-    kernel_putch(ch, VGA_BLACK, VGA_WHITE);
+    kernel_putch(ch, VGA_WHITE, VGA_BLACK);
 }
 
 int kernel_puts(const char* string)
 {
-    kernel_putstring(string, VGA_BLACK, VGA_WHITE);
+    kernel_putstring(string, VGA_WHITE, VGA_BLACK);
 }
 
 int kernel_printf(const char* format, ...)
@@ -107,7 +107,7 @@ int kernel_printf_argList(int fgColor, int bgColor, const char* format, va_list 
                 int valint = va_arg(argList, int);
                 kernel_putint(valint, fgColor, bgColor);
             } else if(type == 'x' || type == 'X') {
-                int valint = va_arg(argList, int);
+                uint valint = va_arg(argList, uint);
                 kernel_puthex(valint, type == 'X', fgColor, bgColor);
             } else if(type == 's') {
                 char *valstr = va_arg(argList, char*);

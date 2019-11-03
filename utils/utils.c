@@ -31,11 +31,12 @@ void* kernel_memset(void* dst, int b, int len) {
 }
 #pragma GCC pop_options
 
-uint* kernel_memset_uint(uint* dst, uint value, int len) {
+uint* kernel_memset_uint(void* dst, uint value, int len) {
+    uint *p = (uint*)dst;
     while (len--)
-        *dst++ = value;
+        *p++ = value;
 
-    return dst;
+    return p;
 }
 
 int kernel_strcmp(const char* dst, const char* src) {
