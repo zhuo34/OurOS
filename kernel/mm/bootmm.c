@@ -8,24 +8,24 @@
 #include <ouros/utils.h>
 #include <ouros/assert.h>
 
-bootmm_sys bootmm;
+bootmm_sys boot_mm;
 
 void init_bootmm()
 {
-	// init bootmm
-	kernel_memset(&bootmm, 0, sizeof(bootmm));
+	// init boot_mm
+	kernel_memset(&boot_mm, 0, sizeof(boot_mm));
 	// init physical memory size and page frame number
-	bootmm.phymm_size = get_phymm_size();
-	bootmm.max_pfn = bootmm.phymm_size >> PAGE_SHIFT;
+	boot_mm.phymm_size = get_phymm_size();
+	boot_mm.max_pfn = boot_mm.phymm_size >> PAGE_SHIFT;
 	// init page_map
-	kernel_memset(bootmm.page_map, PAGE_FREE, KERNEL_PAGE_NUM);
+	kernel_memset(boot_mm.page_map, PAGE_FREE, KERNEL_PAGE_NUM);
 	// init info
-	bootmm.info_cnt = 0;
+	boot_mm.info_cnt = 0;
 	// alloc kernel memory 16M
 	uint kmm_size = 16 * MB;
 	uint kmm_pfn = kmm_size >> PAGE_SHIFT;
-	insert_bootmm_info(&bootmm, 0, kmm_size - 1, MMINFO_TYPE_KERNEL);
-	kernel_memset(bootmm.page_map, PAGE_USED, kmm_pfn);
+	insert_bootmm_info(&boot_mm, 0, kmm_size - 1, MMINFO_TYPE_KERNEL);
+	kernel_memset(boot_mm.page_map, PAGE_USED, kmm_pfn);
 }
 
 uint insert_bootmm_info(bootmm_sys *mm, uint start_addr, uint length, uint type)

@@ -12,6 +12,7 @@ void init_buddy()
 	if (!base_addr) {
 		
 	}
+	kernel_memset((void *)base_addr, 0, boot_mm.max_pfn * sizeof(buddy_page));
 	uint virtual_addr = base_addr | 0x80000000;
 	all_pages = (buddy_page *)virtual_addr;
 	// init buddy pages
