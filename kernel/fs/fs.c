@@ -4,7 +4,7 @@
 
 #include <ouros/log.h>
 #include <ouros/error.h>
-#include <assert.h>
+#include <ouros/assert.h>
 
 static 	MBR 	*sdCard_MBR;
 

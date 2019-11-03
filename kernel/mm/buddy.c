@@ -14,7 +14,7 @@ void init_buddy()
 	buddy_pages = (buddy_page *)virtual_addr;
 
 	uint kernel_reserved_btyes = bootmm.info[0].addr_start + bootmm.info[0].length;
-	uint kernel_reserved_pages = upper_align(kernel_reserved_btyes, 1 << PAGE_SIZE) >> PAGE_SIZE;
+	uint kernel_reserved_pages = upper_align(kernel_reserved_btyes, 1 << PAGE_SHIFT) >> PAGE_SHIFT;
 	buddy_mm.start_pfn = upper_align(kernel_reserved_pages, 1 << MAX_BUDDY_ORDER);
 	buddy_mm.max_pfn = lower_align(bootmm.max_pfn - buddy_mm.start_pfn, 1 << MAX_BUDDY_ORDER);
 	
