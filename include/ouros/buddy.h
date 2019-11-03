@@ -4,9 +4,13 @@
 #include <ouros/type.h>
 #include <ouros/list.h>
 
+enum buddy_page_info {
+	BUDDY_FREE, BUDDY_SLAB, BUDDY_ALLOCED, BUDDY_RESERVED
+};
+
 struct buddy_page_struct {
 	list_node list;
-	bool used;
+	uint used_info;
 	uint bplevel;
 };
 typedef struct buddy_page_struct buddy_page;

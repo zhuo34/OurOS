@@ -1,5 +1,23 @@
 #include "list.h"
 
+list *init_list(list *list)
+{
+	if (list) {
+		list->head = nullptr;
+		list->size = 0;
+	}
+	return list;
+}
+
+list_node *init_list_node(list_node *node)
+{
+	if (node) {
+		node->prev = nullptr;
+		node->next = nullptr;
+	}
+	return node;
+}
+
 uint get_size(list *list)
 {
 	if (!list)

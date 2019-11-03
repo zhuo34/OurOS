@@ -28,16 +28,16 @@ void init_bootmm()
 	kernel_memset(bootmm.page_map, PAGE_USED, kmm_pfn);
 }
 
-uint insert_bootmm_info(bootmm_sys *mm, uint addr_start, uint length, uint type)
+uint insert_bootmm_info(bootmm_sys *mm, uint start_addr, uint length, uint type)
 {
 	uint ret = 0;
 	for (int i = 0; i < mm->info_cnt; i++) {
 		bootmm_info this_info = mm->info[i];
 		if (this_info.type != type)
 			continue;
-		if (this_info.addr_start + this_info.length == addr_start) {
+		if (this_info.start_addr + this_info.length == start_addr) {
 			bootmm_info next_info = mm->info[i+1];
-			if (next_info.type == type && addr_start + length == next_info.addr_start) {
+			if (next_info.type == type && start_addr + length == next_info.start_addr) {
 				this_info.length += length + next_info.length;
 				delete_bootmm_info(mm, i+1);
 				ret = 1;
@@ -46,8 +46,8 @@ uint insert_bootmm_info(bootmm_sys *mm, uint addr_start, uint length, uint type)
 				ret = 2;
 			}
 			break;
-		} else if (addr_start + length == this_info.length) {
-			this_info.addr_start = addr_start;
+		} else if (start_addr + length == this_info.length) {
+			this_info.start_addr = start_addr;
 			this_info.length += length;
 			ret = 3;
 			break;
@@ -57,17 +57,17 @@ uint insert_bootmm_info(bootmm_sys *mm, uint addr_start, uint length, uint type)
 		if (mm->info_cnt == MAX_MMINFO_NUM) {
 			ret = 0;
 		} else {
-			set_bootmm_info(mm, mm->info_cnt++, addr_start, length, type);
+			set_bootmm_info(mm, mm->info_cnt++, start_addr, length, type);
 			ret = 4;
 		}
 	}
 	return ret;
 }
 
-uint set_bootmm_info(bootmm_sys *mm, uint index, uint addr_start, uint length, uint type)
+uint set_bootmm_info(bootmm_sys *mm, uint index, uint start_addr, uint length, uint type)
 {
 	kernel_assert(index < MAX_MMINFO_NUM, "Set bootmm info error!");
-	mm->info[index].addr_start = addr_start;
+	mm->info[index].start_addr = start_addr;
 	mm->info[index].length = length;
 	mm->info[index].type = type;
 }
@@ -90,9 +90,9 @@ uint split_bootmm_info(bootmm_sys *mm, uint index, uint split_addr_start)
 	if (mm->info_cnt == MAX_MMINFO_NUM)
 		return 0;
 	bootmm_info mminfo = mm->info[index];
-	if (split_addr_start > mminfo.addr_start && split_addr_start < mminfo.addr_start + mminfo.length) {
+	if (split_addr_start > mminfo.start_addr && split_addr_start < mminfo.start_addr + mminfo.length) {
 		uint temp = mminfo.length;
-		mminfo.length = split_addr_start - mminfo.addr_start;
+		mminfo.length = split_addr_start - mminfo.start_addr;
 		set_bootmm_info(mm, mm->info_cnt++, split_addr_start, temp - mminfo.length, mminfo.type);
 		return 1;
 	}
@@ -142,10 +142,10 @@ void bootmm_free_page(bootmm_sys *mm, void *addr, uint size)
 		return;
 	}
 	for (uint i = 0; i < mm->info_cnt; i++) {
-		if ((uint)addr < mm->info[i].addr_start || (uint)addr >= mm->info[i].addr_start + mm->info[i].length) {
+		if ((uint)addr < mm->info[i].start_addr || (uint)addr >= mm->info[i].start_addr + mm->info[i].length) {
 			continue;
 		}
-		uint rest_size = mm->info[i].length - ((uint)addr - mm->info[i].addr_start);
+		uint rest_size = mm->info[i].length - ((uint)addr - mm->info[i].start_addr);
 		if (rest_size < size) {
 			kernel_printf("Bootmm free too much memory!");
 			return;

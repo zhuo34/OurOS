@@ -17,7 +17,7 @@ enum bootmm_info_type {
 };
 
 struct bootmm_info_struct {
-	uint addr_start;
+	uint start_addr;
 	uint length;
 	uint type;
 };

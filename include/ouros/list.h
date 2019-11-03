@@ -17,6 +17,9 @@ struct list_struct {
 };
 typedef struct list_struct list;
 
+list *init_list(list *list);
+list_node *init_list_node(list_node *node);
+
 uint get_size(list *list);
 list_node *get_head(list *list);
 list_node *get_prev(list_node *node);
