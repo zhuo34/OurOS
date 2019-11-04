@@ -16,9 +16,9 @@ void init_bootmm()
 	kernel_memset(&boot_mm, 0, sizeof(boot_mm));
 	// init physical memory size and page frame number
 	boot_mm.phymm_size = get_phymm_size();
-	boot_mm.max_pfn = boot_mm.phymm_size >> PAGE_SHIFT;
+	boot_mm.page_num = boot_mm.phymm_size >> PAGE_SHIFT;
 	// init page_map
-	kernel_memset(boot_mm.page_map, PAGE_FREE, KERNEL_PAGE_NUM);
+	kernel_memset(boot_mm.page_map, PAGE_FREE, MACHINE_PAGE_NUM);
 	// init info
 	boot_mm.info_cnt = 0;
 	// alloc kernel memory 16M
@@ -110,7 +110,7 @@ void* bootmm_alloc_page(bootmm_sys *mm, uint size, uint type, uint addr_align)
 	uint pfn_align = addr_align >> PAGE_SHIFT;
 	uint res = 0;
 	
-	res = find_pages(mm, page_cnt, mm->last_alloc_end + 1, mm->max_pfn - 1, pfn_align);
+	res = find_pages(mm, page_cnt, mm->last_alloc_end + 1, mm->page_num - 1, pfn_align);
 	if (!res)
 		res = find_pages(mm, page_cnt, 0, mm->last_alloc_end, pfn_align);
 	if (res) {
@@ -177,7 +177,7 @@ uint find_pages(bootmm_sys *mm, uint page_cnt, uint pfn_start, uint pfn_end, uin
 	if (pfn_align == 0)
 		pfn_align = 1;
 	pfn_start = upper_align(pfn_start, pfn_align);
-	pfn_end = min(mm->max_pfn - 1, pfn_end);
+	pfn_end = min(mm->page_num - 1, pfn_end);
 	
 	for (uint i = pfn_start; i <= pfn_end;) {
 		if (mm->page_map[i] != PAGE_USED) {

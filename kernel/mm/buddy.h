@@ -5,7 +5,10 @@
 #include <ouros/bootmm.h>
 
 extern bootmm_sys boot_mm;
+<<<<<<< Updated upstream
 
-// void __free_pages(buddy_page *page, uint bplevel);
+void __free_pages(buddy_zone *mm, buddy_page *page);
+=======
+>>>>>>> Stashed changes
 
 #endif // BUDDY_H

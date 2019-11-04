@@ -24,7 +24,7 @@ typedef struct buddy_free_area_struct buddy_free_area;
 
 struct buddy_zone_struct {
 	uint start_pfn;
-	uint max_pfn;
+	uint page_num;
 	buddy_page *pages;
 	buddy_free_area free_area[MAX_BUDDY_ORDER + 1];	// 0, 1, ..., MAX_BUDDY_ORDER
 };
