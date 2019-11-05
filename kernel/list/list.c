@@ -1,28 +1,30 @@
 #include "list.h"
 
-list *init_list(list *list)
+void init_list(list *list)
 {
 	if (list) {
 		list->head = nullptr;
 		list->size = 0;
 	}
-	return list;
 }
 
-list_node *init_list_node(list_node *node)
+void init_list_node(list_node *node)
 {
 	if (node) {
-		node->prev = nullptr;
-		node->next = nullptr;
+		node->next = node->prev = nullptr;
 	}
-	return node;
 }
 
-uint get_size(list *list)
+int get_size(list *list)
 {
 	if (!list)
 		return 0;
 	return list->size;
+}
+
+bool is_empty(list *list)
+{
+	return get_size(list) == 0;
 }
 
 list_node *get_head(list *list)
@@ -46,46 +48,77 @@ list_node *get_next(list_node *node)
 	return node->next;
 }
 
-list_node *find_list_node(list *list, uint index)
+int get_pos_idx(list *list, int index)
+{
+	return index < 0 ? (list->size + index) : index;
+}
+
+int list_valid_idx(list *list, int index)
+{
+	if (!list)
+		return 0;
+	if (index >= 0 && index < list->size)
+		return 1;
+	else if (index < 0 && -index <= list->size)
+		return 1;
+	else
+		return 0;
+}
+
+list_node *get_list_node(list *list, int index)
 {
 	list_node *ret = nullptr;
-	if (list && index < list->size) {
-		int go_back = 0;
-		list_node *p = list->head;
-		if (index > list->size / 2)
-			go_back = 1;
-		if (go_back) {
-			index = list->size - index;
-			while (index--) {
-				p = p->prev;
-			}
-		} else {
-			while (index--) {
-				p = p->next;
-			}
-		}
-		ret = p;
+	if (!list_valid_idx(list, index)) {
+		return ret;
 	}
+	int pos_index = get_pos_idx(list, index);
+	int go_back = 0;
+	list_node *p = list->head;
+	if (pos_index > list->size / 2)
+		go_back = 1;
+	if (go_back) {
+		pos_index = list->size - pos_index;
+		while (pos_index--) {
+			p = p->prev;
+		}
+	} else {
+		while (pos_index--) {
+			p = p->next;
+		}
+	}
+	ret = p;
 	return ret;
 }
 
-int insert_list_node(list *list, list_node *node, uint index)
+int find_list_node(list *list, list_node *node)
+{
+	if (!list) return -1;
+	list_node *p = list->head;
+	int idx = 0;
+	int size = list->size;
+	while (size--) {
+		if (p == node)
+			return list->size - size - 1;
+		p = p->next;
+	}
+	return -1;
+}
+
+int insert_list_node(list *list, list_node *node, int index)
 {
 	if (!list || !node)
 		return 0;
-	if (index > list->size)
+	int pos_idx = get_pos_idx(list, index);
+	if (pos_idx > list->size || pos_idx < 0)
 		return 0;
-	if (list->size == 0)
+	if (pos_idx == list->size)
 		return append_list_node(list, node);
 	if (index == 0) {
 		int ret = append_list_node(list, node);
-		if (ret)
-			list->head = list->head->prev;
+		if (ret) list->head = list->head->prev;
 		return ret;
 	}
-	if (index == list->size)
-		return append_list_node(list, node);
-	list_node *p = find_list_node(list, index);
+	list_node *p = get_list_node(list, index);
 	list_node *head = list->head;
 	list->head = p;
 	int ret = insert_list_node(list, node, 0);
@@ -114,17 +147,30 @@ int append_list_node(list *list, list_node *node)
 	return ret;
 }
 
-list_node *delete_list_node(list *list, uint index)
+list_node *delete_list_node(list *list, list_node *node)
 {
-	if (!list || list->size == 0 || index >= list->size)
+	list_node *ret = nullptr;
+	if (!find_list_node(list, node))
+		return ret;
+	list_node *head = list->head;
+	list->head = node->next;
+	ret = pop_list_node(list);
+	list->head = head;
+	return ret;
+}
+
+list_node *delete_list_node_by_idx(list *list, int index)
+{
+	if (!list || !list_valid_idx(list, index))
 		return nullptr;
-	if (index == 0 || list->size == 1) {
+	int pos_idx = get_pos_idx(list, index);
+	if (pos_idx == 0 || list->size == 1) {
 		list->head = list->head->next;
 		return pop_list_node(list);
 	}
 
 	list_node *head = list->head;
-	list_node *p = find_list_node(list, index);
+	list_node *p = get_list_node(list, pos_idx);
 	list->head = p->next;
 	list_node *ret = pop_list_node(list);
 	list->head = head;
@@ -154,7 +200,7 @@ void traversal_list(list *list, void (*f)(list_node *))
 	if (!list)
 		return;
 	list_node *p = list->head;
-	uint size = list->size;
+	int size = list->size;
 	while (size--) {
 		f(p);
 		p = p->next;

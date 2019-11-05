@@ -11,7 +11,7 @@ enum buddy_page_info {
 struct buddy_page_struct {
 	list_node list;
 	uint used_info;
-	uint bplevel;
+	int bplevel;
 };
 typedef struct buddy_page_struct buddy_page;
 
@@ -31,5 +31,12 @@ struct buddy_zone_struct {
 typedef struct buddy_zone_struct buddy_zone;
 
 void init_buddy();
+
+void free_pages(void *addr);
+void *alloc_pages(uint size);
+
+void print_buddy_info();
+
+void test_buddy();
 
 #endif // OUROS_BUDDY_H
