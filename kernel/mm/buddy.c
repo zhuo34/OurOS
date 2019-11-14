@@ -23,7 +23,7 @@ void init_buddy()
 		init_list_node((list_node *)(all_pages + i));
 	}
 	// init buddy_mm
-	uint kernel_reserved_btyes = boot_mm.info[1].start_addr + boot_mm.info[0].length;
+	uint kernel_reserved_btyes = boot_mm.info[0].start_addr + boot_mm.info[0].length;
 	uint kernel_reserved_pages = upper_align(kernel_reserved_btyes, 1 << PAGE_SHIFT) >> PAGE_SHIFT;
 	buddy_mm.start_pfn = upper_align(kernel_reserved_pages, 1 << MAX_BUDDY_ORDER);
 	buddy_mm.page_num = lower_align(boot_mm.page_num - buddy_mm.start_pfn, 1 << MAX_BUDDY_ORDER);

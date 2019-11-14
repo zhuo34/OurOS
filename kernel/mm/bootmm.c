@@ -1,9 +1,3 @@
-/*
- * @Author: Zhuo Chen
- * @Github: https://github.com/dmdecz
- * @Description: 
- * @FilePath: /OurOs/kernel/mm/bootmm.c
- */
 #include "bootmm.h"
 #include <ouros/utils.h>
 #include <ouros/assert.h>

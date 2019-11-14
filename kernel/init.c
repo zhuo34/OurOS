@@ -52,6 +52,7 @@ void init_kernel() {
     log(LOG_OK, "Bootmem.");
     init_buddy();
     log(LOG_OK, "Buddy.");
+    test_buddy();
     init_slab();
     log(LOG_OK, "Slab.");
     log(LOG_END, "Memory Modules.");
