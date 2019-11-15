@@ -75,7 +75,7 @@ bool page_is_in_freelist(struct buddy_zone *mm, struct page *page)
 	bool ret = true;
 	if (page_is_in_zone(mm, page)) {
 		for (int i = 0; i < MAX_BUDDY_ORDER; i++) {
-			if (!list_contain_node(&(mm->free_area[i].freelist), &(page->list))) {
+			if (!list_contain_node(&(page->list), &(mm->free_area[i].freelist))) {
 				ret = false;
 				break;
 			}
@@ -147,7 +147,7 @@ struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel)
 			struct page *page_not_used = get_page_by_idx(page_not_used_idx);
 			page_not_used->bplevel = free_bplevel;
 			page_not_used->used_info = BUDDY_FREE;
-			list_add_tail(&(mm->free_area[free_bplevel].freelist), &(page_not_used->list));
+			list_add_tail(&(page_not_used->list), &(mm->free_area[free_bplevel].freelist));
 		}
 		struct page *page_alloc = get_page_by_idx(free_page_idx);
 		page_alloc->bplevel = bplevel;

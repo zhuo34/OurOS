@@ -122,7 +122,7 @@ static inline int list_empty(const struct list_head *head)
 	     &pos->member != (head);					\
 	     pos = list_next_entry(pos, member))
 
-static inline bool list_contain_node(const struct list_head *head, const struct list_head *node)
+static inline bool list_contain_node(const struct list_head *node, const struct list_head *head)
 {
 	bool ret = false;
 	struct list_head *p;
