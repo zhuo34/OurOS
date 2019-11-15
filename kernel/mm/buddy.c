@@ -3,24 +3,24 @@
 #include <ouros/utils.h>
 #include <driver/vga.h>
 
-buddy_page *all_pages;
-buddy_zone buddy_mm;
+struct page *all_pages;
+struct buddy_zone buddy_mm;
 
 void init_buddy()
 {
 	// allocate memory for buddy pages
-	uint base_addr = (uint)bootmm_alloc_page(&boot_mm, boot_mm.page_num * sizeof(buddy_page), MMINFO_TYPE_KERNEL, 1 << PAGE_SHIFT);
+	uint base_addr = (uint)bootmm_alloc_page(&boot_mm, boot_mm.page_num * sizeof(struct page), MMINFO_TYPE_KERNEL, 1 << PAGE_SHIFT);
 	if (!base_addr) {
 		
 	}
-	kernel_memset((void *)base_addr, 0, boot_mm.page_num * sizeof(buddy_page));
+	kernel_memset((void *)base_addr, 0, boot_mm.page_num * sizeof(struct page));
 	uint virtual_addr = base_addr | 0x80000000;
-	all_pages = (buddy_page *)virtual_addr;
+	all_pages = (struct page *)virtual_addr;
 	// init buddy pages
 	for (uint i = 0; i < boot_mm.page_num; i++) {
 		all_pages[i].bplevel = 0;
 		all_pages[i].used_info = BUDDY_RESERVED;
-		init_list_node((list_node *)(all_pages + i));
+		INIT_LIST_HEAD(&(all_pages[i].list));
 	}
 	// init buddy_mm
 	uint kernel_reserved_btyes = boot_mm.info[0].start_addr + boot_mm.info[0].length;
@@ -29,7 +29,7 @@ void init_buddy()
 	buddy_mm.page_num = lower_align(boot_mm.page_num - buddy_mm.start_pfn, 1 << MAX_BUDDY_ORDER);
 	buddy_mm.pages = all_pages + buddy_mm.start_pfn;	
 	for (int i = 0; i < MAX_BUDDY_ORDER + 1; i++) {
-		init_list((list *)&(buddy_mm.free_area[i]));
+		INIT_LIST_HEAD(&(buddy_mm.free_area[i].freelist));
 	}
 
 	// init lock
@@ -40,22 +40,22 @@ void init_buddy()
 	}
 }
 
-buddy_page *get_page_by_idx(uint page_idx)
+struct page *get_page_by_idx(uint page_idx)
 {
 	return all_pages + page_idx;
 }
 
-uint get_page_idx(buddy_page *page)
+uint get_page_idx(struct page *page)
 {
 	return page - all_pages;
 }
 
-bool page_idx_is_in_zone(buddy_zone *mm, uint page_idx)
+bool page_idx_is_in_zone(struct buddy_zone *mm, uint page_idx)
 {
 	return (page_idx >= mm->start_pfn) && (page_idx < mm->start_pfn + mm->page_num);
 }
 
-bool page_is_in_zone(buddy_zone *mm, buddy_page *page)
+bool page_is_in_zone(struct buddy_zone *mm, struct page *page)
 {
 	return page_idx_is_in_zone(mm, get_page_idx(page));
 }
@@ -65,17 +65,17 @@ uint get_buddy_page_idx(uint page_idx, int bplevel)
 	return page_idx ^ (1 << bplevel);
 }
 
-buddy_page *get_buddy_page(buddy_page *page, int bplevel)
+struct page *get_buddy_page(struct page *page, int bplevel)
 {
 	return get_page_by_idx(get_buddy_page_idx(get_page_idx(page), bplevel));
 }
 
-bool page_is_in_freelist(buddy_zone *mm, buddy_page *page)
+bool page_is_in_freelist(struct buddy_zone *mm, struct page *page)
 {
 	bool ret = true;
 	if (page_is_in_zone(mm, page)) {
 		for (int i = 0; i < MAX_BUDDY_ORDER; i++) {
-			if (!find_list_node((list *)&(mm->free_area[i]), (list_node *)page)) {
+			if (!list_contain_node(&(mm->free_area[i].freelist), &(page->list))) {
 				ret = false;
 				break;
 			}
@@ -84,7 +84,7 @@ bool page_is_in_freelist(buddy_zone *mm, buddy_page *page)
 	return ret;
 }
 
-void __free_pages(buddy_zone *mm, buddy_page *page)
+void __free_pages(struct buddy_zone *mm, struct page *page)
 {
 	// lock
 
@@ -100,18 +100,18 @@ void __free_pages(buddy_zone *mm, buddy_page *page)
 	}
 	while (bplevel < MAX_BUDDY_ORDER) {
 		uint buddy_page_idx = get_buddy_page_idx(get_page_idx(page), page->bplevel);
-		buddy_page *buddy_page = get_page_by_idx(buddy_page_idx);
+		struct page *buddy_page = get_page_by_idx(buddy_page_idx);
 		if (bplevel != buddy_page->bplevel || buddy_page->used_info != BUDDY_FREE) {
 			break;
 		}
-		delete_list_node((list *)&(mm->free_area[bplevel]), (list_node *)buddy_page);
+		list_del_init(&(buddy_page->list));
 		this_page_idx &= buddy_page_idx;
-		page = get_page_by_idx(this_page_idx);
+		buddy_page = get_page_by_idx(this_page_idx);
 		bplevel++;
 	}
 	page->bplevel = bplevel;
 	page->used_info = BUDDY_FREE;
-	append_list_node((list *)&(mm->free_area[bplevel]), (list_node *)page);
+	list_add_tail(&(page->list), &(mm->free_area[bplevel].freelist));
 
 	// unlock
 }
@@ -121,9 +121,9 @@ void free_pages(void *addr)
 	__free_pages(&buddy_mm, get_page_by_idx(((uint)addr >> PAGE_SHIFT)));
 }
 
-buddy_page *__alloc_pages(buddy_zone *mm, uint bplevel)
+struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel)
 {
-	buddy_page *ret = nullptr;
+	struct page *ret = nullptr;
 	if (bplevel > MAX_BUDDY_ORDER) {
 		return ret;
 	}
@@ -131,24 +131,25 @@ buddy_page *__alloc_pages(buddy_zone *mm, uint bplevel)
 	// lock
 
 	for (int i = bplevel; i <= MAX_BUDDY_ORDER; i++) {
-		if (!is_empty((list *)&(mm->free_area[i]))) {
+		if (!list_empty(&(mm->free_area[i].freelist))) {
 			free_bplevel = i;
 			break;
 		}
 	}
 	
 	if (free_bplevel != -1) {
-		buddy_page *free_page = (buddy_page *)pop_list_node((list *)&(mm->free_area[free_bplevel]));
+		struct page *free_page = list_last_entry(&(mm->free_area[free_bplevel].freelist), struct page, list);
+		list_del_init(&(free_page->list));
 		uint free_page_idx = get_page_idx(free_page);
 		while (free_bplevel > bplevel) {
 			free_bplevel--;
 			uint page_not_used_idx = get_buddy_page_idx(free_page_idx, free_bplevel);
-			buddy_page *page_not_used = get_page_by_idx(page_not_used_idx);
+			struct page *page_not_used = get_page_by_idx(page_not_used_idx);
 			page_not_used->bplevel = free_bplevel;
 			page_not_used->used_info = BUDDY_FREE;
-			append_list_node((list *)&(mm->free_area[free_bplevel]), (list_node *)page_not_used);
+			list_add_tail(&(mm->free_area[free_bplevel].freelist), &(page_not_used->list));
 		}
-		buddy_page *page_alloc = get_page_by_idx(free_page_idx);
+		struct page *page_alloc = get_page_by_idx(free_page_idx);
 		page_alloc->bplevel = bplevel;
 		page_alloc->used_info = BUDDY_ALLOCED;
 		ret = free_page_idx << PAGE_SHIFT;
@@ -172,12 +173,6 @@ void *alloc_pages(uint size)
 	return __alloc_pages(&buddy_mm, bplevel);
 }
 
-void print_page_info(list_node *node)
-{
-	buddy_page *page = (buddy_page *)node;
-	kernel_printf("%d\t%x\n", page->bplevel, page->used_info);
-}
-
 void print_buddy_info()
 {
 	kernel_printf("<=== buddy info ===>\n");
@@ -197,7 +192,10 @@ void print_freelist_info()
 	kernel_printf("===> free page info\n");
 	for (int i = 0; i <= MAX_BUDDY_ORDER; i++) {
 		kernel_printf("=>bplevel\t%d\n", i);
-		traversal_list((list *)&(buddy_mm.free_area[i]), print_page_info);
+		struct page *p;
+		list_for_each_entry(p, &(buddy_mm.free_area[i].freelist), list) {
+			kernel_printf("%d\t%x\n", p->bplevel, p->used_info);
+		}
 	}
 }
 

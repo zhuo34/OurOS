@@ -8,7 +8,7 @@
 #define max(x, y) (((x)>(y))?(x):(y))
 #define min(x, y) (((x)<(y))?(x):(y))
 
-#define container_of(ptr, type, member) ((type*)((char*)ptr - (char*)&(((type*)0)->member)))
+#define container_of(ptr, type, member) ((type*)((char*)ptr - (uint)&(((type*)0)->member)))
 
 #define KB 1024
 #define MB (1024 * KB)
