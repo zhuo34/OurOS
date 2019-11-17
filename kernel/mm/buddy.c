@@ -14,7 +14,7 @@ void init_buddy()
 		
 	}
 	kernel_memset((void *)base_addr, 0, boot_mm.page_num * sizeof(struct page));
-	uint virtual_addr = base_addr | 0x80000000;
+	void *virtual_addr = get_kernel_vaddr(base_addr);
 	all_pages = (struct page *)virtual_addr;
 	// init buddy pages
 	for (uint i = 0; i < boot_mm.page_num; i++) {
@@ -38,36 +38,6 @@ void init_buddy()
 	for (uint i = 0; i < buddy_mm.page_num; i++) {
 		__free_pages(&buddy_mm, buddy_mm.pages + i);
 	}
-}
-
-struct page *get_page_by_idx(uint page_idx)
-{
-	return all_pages + page_idx;
-}
-
-uint get_page_idx(struct page *page)
-{
-	return page - all_pages;
-}
-
-bool page_idx_is_in_zone(struct buddy_zone *mm, uint page_idx)
-{
-	return (page_idx >= mm->start_pfn) && (page_idx < mm->start_pfn + mm->page_num);
-}
-
-bool page_is_in_zone(struct buddy_zone *mm, struct page *page)
-{
-	return page_idx_is_in_zone(mm, get_page_idx(page));
-}
-
-uint get_buddy_page_idx(uint page_idx, int bplevel)
-{
-	return page_idx ^ (1 << bplevel);
-}
-
-struct page *get_buddy_page(struct page *page, int bplevel)
-{
-	return get_page_by_idx(get_buddy_page_idx(get_page_idx(page), bplevel));
 }
 
 bool page_is_in_freelist(struct buddy_zone *mm, struct page *page)
@@ -118,7 +88,7 @@ void __free_pages(struct buddy_zone *mm, struct page *page)
 
 void free_pages(void *addr)
 {
-	__free_pages(&buddy_mm, get_page_by_idx(((uint)addr >> PAGE_SHIFT)));
+	__free_pages(&buddy_mm, get_page_by_phy_addr(addr));
 }
 
 struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel)
@@ -152,7 +122,9 @@ struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel)
 		struct page *page_alloc = get_page_by_idx(free_page_idx);
 		page_alloc->bplevel = bplevel;
 		page_alloc->used_info = BUDDY_ALLOCED;
-		ret = free_page_idx << PAGE_SHIFT;
+		page_alloc->virtual = get_kernel_vaddr(get_page_phy_addr(page_alloc));
+		page_alloc->cachep = nullptr;
+		ret = page_alloc;
 	} else {
 		kernel_printf("Buddy no enough memory!");
 	}
@@ -170,7 +142,12 @@ void *alloc_pages(uint size)
 		n *= 2;
 		bplevel++;
 	}
-	return __alloc_pages(&buddy_mm, bplevel);
+	struct page *pagep = __alloc_pages(&buddy_mm, bplevel);
+	void *ret = nullptr;
+	if (pagep) {
+		ret = get_page_phy_addr(pagep);
+	}
+	return ret;
 }
 
 void print_buddy_info()

@@ -2,7 +2,7 @@
 #include <ouros/utils.h>
 #include <ouros/assert.h>
 
-bootmm_sys boot_mm;
+struct bootmm_sys boot_mm;
 
 void init_bootmm()
 {
@@ -22,15 +22,15 @@ void init_bootmm()
 	kernel_memset(boot_mm.page_map, PAGE_USED, kmm_pfn);
 }
 
-uint insert_bootmm_info(bootmm_sys *mm, uint start_addr, uint length, uint type)
+uint insert_bootmm_info(struct bootmm_sys *mm, uint start_addr, uint length, uint type)
 {
 	uint ret = 0;
 	for (int i = 0; i < mm->info_cnt; i++) {
-		bootmm_info this_info = mm->info[i];
+		struct bootmm_info this_info = mm->info[i];
 		if (this_info.type != type)
 			continue;
 		if (this_info.start_addr + this_info.length == start_addr) {
-			bootmm_info next_info = mm->info[i+1];
+			struct bootmm_info next_info = mm->info[i+1];
 			if (next_info.type == type && start_addr + length == next_info.start_addr) {
 				this_info.length += length + next_info.length;
 				delete_bootmm_info(mm, i+1);
@@ -58,7 +58,7 @@ uint insert_bootmm_info(bootmm_sys *mm, uint start_addr, uint length, uint type)
 	return ret;
 }
 
-uint set_bootmm_info(bootmm_sys *mm, uint index, uint start_addr, uint length, uint type)
+uint set_bootmm_info(struct bootmm_sys *mm, uint index, uint start_addr, uint length, uint type)
 {
 	kernel_assert(index < MAX_MMINFO_NUM, "Set bootmm info error!");
 	mm->info[index].start_addr = start_addr;
@@ -66,7 +66,7 @@ uint set_bootmm_info(bootmm_sys *mm, uint index, uint start_addr, uint length, u
 	mm->info[index].type = type;
 }
 
-uint delete_bootmm_info(bootmm_sys *mm, uint index)
+uint delete_bootmm_info(struct bootmm_sys *mm, uint index)
 {
 	if (index >= mm->info_cnt)
 		return 0;
@@ -77,13 +77,13 @@ uint delete_bootmm_info(bootmm_sys *mm, uint index)
 	return 1;
 }
 
-uint split_bootmm_info(bootmm_sys *mm, uint index, uint split_addr_start)
+uint split_bootmm_info(struct bootmm_sys *mm, uint index, uint split_addr_start)
 {
 	if (index >= mm->info_cnt)
 		return 0;
 	if (mm->info_cnt == MAX_MMINFO_NUM)
 		return 0;
-	bootmm_info mminfo = mm->info[index];
+	struct bootmm_info mminfo = mm->info[index];
 	if (split_addr_start > mminfo.start_addr && split_addr_start < mminfo.start_addr + mminfo.length) {
 		uint temp = mminfo.length;
 		mminfo.length = split_addr_start - mminfo.start_addr;
@@ -98,7 +98,7 @@ uint split_bootmm_info(bootmm_sys *mm, uint index, uint split_addr_start)
  * @param
  * @return
  */
-void* bootmm_alloc_page(bootmm_sys *mm, uint size, uint type, uint addr_align)
+void* bootmm_alloc_page(struct bootmm_sys *mm, uint size, uint type, uint addr_align)
 {
 	uint page_cnt = upper_align(size, 1 << PAGE_SHIFT) >> PAGE_SHIFT;
 	uint pfn_align = addr_align >> PAGE_SHIFT;
@@ -119,7 +119,7 @@ void* bootmm_alloc_page(bootmm_sys *mm, uint size, uint type, uint addr_align)
 	return (void *)(res << PAGE_SHIFT);
 }
 
-void bootmm_free_page(bootmm_sys *mm, void *addr, uint size)
+void bootmm_free_page(struct bootmm_sys *mm, void *addr, uint size)
 {
 	if (get_low_bits((uint)addr, PAGE_SHIFT) != 0) {
 		kernel_printf("Address not aligned!");
@@ -166,7 +166,7 @@ void bootmm_free_page(bootmm_sys *mm, void *addr, uint size)
  * @param {type} 
  * @return: 
  */
-uint find_pages(bootmm_sys *mm, uint page_cnt, uint pfn_start, uint pfn_end, uint pfn_align)
+uint find_pages(struct bootmm_sys *mm, uint page_cnt, uint pfn_start, uint pfn_end, uint pfn_align)
 {
 	if (pfn_align == 0)
 		pfn_align = 1;

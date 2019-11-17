@@ -1,7 +1,7 @@
 #ifndef OUROS_BUDDY_H
 #define OUROS_BUDDY_H
 
-#include <ouros/type.h>
+#include <ouros/mm.h>
 #include <ouros/list.h>
 
 enum buddy_page_info {
@@ -11,7 +11,11 @@ enum buddy_page_info {
 struct page {
 	struct list_head list;
 	uint used_info;
+	void *virtual;
+	// Buddy
 	int bplevel;
+	// Slab
+	void *cachep;
 };
 
 struct buddy_free_area {
@@ -27,6 +31,9 @@ struct buddy_zone {
 	struct page *pages;
 	struct buddy_free_area free_area[MAX_BUDDY_ORDER + 1];	// 0, 1, ..., MAX_BUDDY_ORDER
 };
+
+extern struct page *all_pages;
+extern struct buddy_zone buddy_mm;
 
 void init_buddy();
 
