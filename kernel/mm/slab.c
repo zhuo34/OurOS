@@ -130,10 +130,15 @@ void kmem_cache_free_page(struct kmem_cache *cachep, void *pagevp)
 
 void *kmalloc(uint size)
 {
-	
+	void *ret = nullptr;
+
+	return ret;
 }
 
-void kfree(void *objp);
+void kfree(void *objp)
+{
+
+}
 
 void print_slab_info()
 {
