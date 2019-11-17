@@ -14,7 +14,7 @@
 #include <ouros/bootmm.h>
 #include <ouros/buddy.h>
 
-#include <ouros/fs/fat.h>
+#include <ouros/fs/fs.h>
 
 #include <ouros/syscall.h>
 

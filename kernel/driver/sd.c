@@ -114,34 +114,34 @@ ret:
     return result;
 }
 
-u32 sd_read_block(unsigned char* buf, unsigned long addr, unsigned long count) {
+bool sd_read_block(Byte* buf, uint addr, uint count) {
     // Read single/multiple block
-    u32 result;
+    int result;
     for (int i = 0; i < count; ++i) {
-        result = sd_read_sector_blocking(addr + i, buf + i * SECSIZE);
+        result = sd_read_sector_blocking(addr + i, buf + (i << SECSHIFT));
         if (0 != result) {
             goto error;
         }
     }
 ok:
-    return 0;
+    return true;
 error:
-    return 1;
+    return false;
 }
 
-u32 sd_write_block(unsigned char* buf, unsigned long addr, unsigned long count) {
+bool sd_write_block(Byte* buf, uint addr, uint count) {
     // Write single/multiple block
-    u32 result;
+    int result;
     for (int i = 0; i < count; ++i) {
-        result = sd_write_sector_blocking(addr + i, buf + i * SECSIZE);
+        result = sd_write_sector_blocking(addr + i, buf + (i << SECSHIFT));
         if (0 != result) {
             goto error;
         }
     }
 ok:
-    return 0;
+    return true;
 error:
-    return 1;
+    return false;
 }
 
 #pragma GCC pop_options

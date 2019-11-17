@@ -1,10 +1,12 @@
 #ifndef DRIVER_SD_H
 #define DRIVER_SD_H
 
-#define SECSIZE 512
-typedef unsigned long u32;
+#include <ouros/type.h>
 
-u32 sd_read_block(unsigned char *buf, unsigned long addr, unsigned long count);
-u32 sd_write_block(unsigned char *buf, unsigned long addr, unsigned long count);
+#define SECSIZE 	(1 << 9)
+#define SECSHIFT 	9
+
+bool sd_read_block(Byte *buf, uint addr, uint count);
+bool sd_write_block(Byte *buf, uint addr, uint count);
 
 #endif  // DRIVER_SD_H

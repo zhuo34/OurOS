@@ -10,13 +10,13 @@
 
 #define container_of(ptr, type, member) ((type*)((char*)ptr - (uint)&(((type*)0)->member)))
 
-#define KB 1024
-#define MB (1024 * KB)
-#define GB (1024 * MB)
+#define KB (1 << 10)
+#define MB (KB << 10)
+#define GB (MB << 10)
 
-void* kernel_memcpy(void* dst, void* src, int len);
+void* kernel_memcpy(void* dst, void* src, uint len);
 void* kernel_memset(void* dst, uchar data, uint len);
-uint* kernel_memset_uint(uint* dst, uint value, int len);
+uint* kernel_memset_uint(void* dst, uint value, uint len);
 int kernel_strcmp(const char* dst, const char* src);
 int pow(int x, int z);
 void kernel_cache(unsigned int block_index);
