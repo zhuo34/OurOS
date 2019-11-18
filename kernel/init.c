@@ -35,6 +35,7 @@ void machine_info() {
 }
 
 void init_kernel() {
+    kernel_printf("<=== begin init ===>\n");
     // init_done = 0;
     kernel_clear_screen();
     // Exception
@@ -52,6 +53,7 @@ void init_kernel() {
     log(LOG_OK, "Bootmem.");
     init_buddy();
     log(LOG_OK, "Buddy.");
+    test_buddy();
     init_slab();
     log(LOG_OK, "Slab.");
     log(LOG_END, "Memory Modules.");
