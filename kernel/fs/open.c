@@ -27,8 +27,10 @@ int path_lookup(const char *filename, int flags, nameidata *nd)
 	nd->nd_mnt = &entry->d_sb->s_mnt;
 
 	int error = link_path_walk(filename, nd);
-	if(error == -ERROR_FILE_NOTFOUND && flags == OPEN_CREATE
-			&& qstr_endwith(filename, nd->nd_cur_name)) {
+	if(error == -ERROR_FILE_NOTFOUND
+		&& flags == OPEN_CREATE
+		&& qstr_endwith(filename, nd->nd_cur_name))
+	{
 		entry = nd->nd_dentry->d_sb->s_op->create(nd->nd_dentry, nd->nd_cur_name);
 		error = IS_ERR_PTR(entry)? PTR_ERR(entry): NO_ERROR;
 	}
@@ -133,9 +135,9 @@ int do_lookup(nameidata *nd)
 	// 如果该目录项为挂载点，则跟踪挂载点切换文件系统
 	vfsmount *mnt = nd->nd_mnt;
 	while(entry->d_mounted) {
-		list_node *head = &entry->d_sb->s_listnode;
-		list_node *p;
-		for(p = head->next; head != p; p = p->next) {
+		list_head *head = &entry->d_sb->s_listnode;
+		list_head *p;
+		list_for_each(p, head) {
 			super_block *sb = container_of(p, super_block, s_listnode);
 			if(sb->s_mnt.mnt_mntpoint == entry && sb->s_mnt.mnt_parent == mnt) {
 				entry = sb->s_root;

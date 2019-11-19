@@ -7,7 +7,7 @@
 // eg: error = -ERROR_NO_MEMORY;
 #define NO_ERROR 				0
 #define ERROR_NO_MEMORY 		1
-#define ERROR_READ_MBR			2
+#define ERROR_READ_SDCARD		2
 #define ERROR_UNKNOWN_FS 		3
 #define ERROR_VFSMOUNT 			4
 #define ERROR_NOT_DIR 			5

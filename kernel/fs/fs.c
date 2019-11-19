@@ -30,10 +30,7 @@ void  kfree_fake(void* p) {
 }
 
 // 超级块链表
-list sb_list = {
-	.head 	= 	nullptr,
-	.size 	= 	0
-};
+static list_head *sb_list;
 
 static dentry *root_dentry;
 static dentry *pwd_dentry;
@@ -48,48 +45,61 @@ void init_fs()
 	if(IS_ERR_VALUE(error)) {
 		log(LOG_FAIL, "init_fscache, error code %d", error);
 		return;
+	} else {
+		log(LOG_OK, "init_fscache");
 	}
-	log(LOG_OK, "init_fscache");
 
-	// 读取SD卡分区表
+	// 读取SD卡分区表并初始化各分区的文件系统
 	error = read_MBR();
 	if(IS_ERR_VALUE(error)) {
 		log(LOG_FAIL, "read_MBR, error code %d", error);
 		return;
+	} else {
+		log(LOG_OK, "read_MBR");
 	}
-	log(LOG_OK, "read_MBR");
 
-	// 初始化各分区文件系统
-	// for(int i=0; i<sdCard_MBR->par_count; i++) {
-	// 	sdCard_MBR->par_fs_system[i]->getSuperBlock;
-	// 	superblock->init(baseaddr)
-	// }
+	// test
+	log(LOG_START, "test fopen");
+	file* f = fs_open("/1.txt", OPEN_FIND, FMODE_READ);
+	if(IS_ERR_PTR(f)){
+		log(LOG_FAIL, "fopen, error code %d", error);
+	} else {
+		log(LOG_OK, "fopen");
+	}
+
 }
 
 int read_MBR()
 {
 	int error = NO_ERROR;
-	
+
 	// 申请buffer读取MBR数据
 	Byte* buf_MBR = (Byte*)kmalloc_fake(SECTOR_SIZE);
 	if (buf_MBR == nullptr) {
 		error = -ERROR_NO_MEMORY;
 		goto exit;
 	}
-	kernel_memset_uint(buf_MBR, 0, SECTOR_SIZE);
 
 	// 从SD卡读取MBR数据
 	if (!sd_read_block(buf_MBR, 0, 1)) {
-		error = -ERROR_READ_MBR;
+		error = -ERROR_READ_SDCARD;
 		goto exit;
 	}
+
+	// 初始化超级块链表
+	sb_list = (list_head*)kmalloc_fake(sizeof(list_head));
+	if(IS_ERR_PTR(sb_list)) {
+		error = PTR_ERR(sb_list);
+		goto exit;
+	}
+	INIT_LIST_HEAD(sb_list);
 
 	// 解析MBR数据
 	// 主引导记录占446字节，之后的数据为硬盘分区表(DPT) Disk Partition Table
 	DPT *curDPT = (DPT*)(buf_MBR + 446);
 	for(int i = 0; i < MAX_PAR_COUNT; i ++, curDPT ++) {
 		// 获得当前分区的起始地址
-		DWord base_addr = read_unaligned(&curDPT->dpt_base_addr, sizeof(curDPT->dpt_base_addr));
+		DWord base_addr = read_data(&curDPT->dpt_base_addr, sizeof(curDPT->dpt_base_addr));
 		if(!base_addr) 
 			continue;
 		// kernel_printf("dpt_base_addr: %d\n", base_addr);
@@ -106,16 +116,25 @@ int read_MBR()
 			error = -ERROR_NO_MEMORY;
 			goto exit;
 		}
-		append_list_node(&sb_list, &sb->s_listnode);
 
+		list_add(&sb->s_listnode, &sb_list);
 	}
+
+	// 初始化根目录项
+	list_head *cur_sb = sb_list->next;
+	super_block *sb = container_of(cur_sb, super_block, s_listnode);
+	root_dentry = sb->s_root;
+
+	// 预读取根目录并创建对应的文件夹
+
+	// 挂载其他分区的文件系统
 
 exit:
 	kfree_fake(buf_MBR);
 	return error;
 }
 
-DWord read_unaligned(void *addr, uint size)
+DWord read_data(void *addr, uint size)
 {
 	kernel_assert(size > 0 && size <= 4, "read_unaligned");
 

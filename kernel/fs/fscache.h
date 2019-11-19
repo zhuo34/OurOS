@@ -13,8 +13,13 @@ typedef struct _fscache
 {
 	uint 			size;
 	uint 			capacity;
-	list_node 		LRU;
-	list_node* 		hash;
+	list_head 		LRU;
+	list_head* 		hash;
 }fscache;
+
+fscache* create_fscache(int capacity);
+
+uint hash_string(qstr key);
+uint hash_int(uint key);
 
 #endif

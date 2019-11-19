@@ -4,6 +4,10 @@
 #include <ouros/type.h>
 #include <ouros/list.h>
 
+// 扇区字节数
+#define SECTOR_SIZE 					512
+#define SECTOR_SHIFT 					9
+
 // 打开文件的方式，即open函数参数flags
 #define OPEN_FIND 						0x0000
 #define OPEN_CREATE 					0x0001
@@ -27,11 +31,13 @@ typedef struct _address_space 			address_space;
 typedef struct _vfsmount 				vfsmount;
 typedef struct _nameidata 				nameidata;
 typedef struct _qstr 					qstr;
+typedef struct list_head 				list_head;
 
 // 文件系统类型
 struct _file_system_type {
     const char 			*name; 						// 文件系统的名称
-	super_block* 		(*get_sb) (DWord base);		// 函数接口，生成一个文件系统实例的超级块
+	// 函数接口，生成一个文件系统实例的超级块
+	super_block* 		(*get_sb) 		(DWord base);
 };
 
 // 挂载信息
@@ -43,11 +49,10 @@ struct _vfsmount {
 
 // 超级块，对应了一个文件系统实例的全局信息
 struct _super_block {
-	list_node 			s_listnode;					// 用于加入全局的超级块链表的结点
-	uint 				s_dev; 						// 设备号，该文件系统所在的SD卡分区
+	list_head 			s_listnode;					// 用于加入全局的超级块链表的结点
 	file_system_type* 	s_type;						// 该文件系统的类型
 	uint 				s_blocksize; 				// 数据块的字节大小
-	uint 				s_blockbits; 				// 数据块大小的位数，用于移位
+	uint 				s_blockbits; 				// 数据块的所占位数，用于移位
 	dentry* 			s_root; 					// 根结点的目录项
 	super_block_op* 	s_op; 						// 超级块的操作函数
 	vfsmount 			s_mnt; 						// 该文件系统的挂载信息
@@ -64,18 +69,20 @@ struct _super_block_op {
 // 页缓存
 struct _address_space {
 	inode* 				a_host; 					// 对应的索引结点
+	list_head 			a_
 };
 
 // 索引结点
 struct _inode {
+	bool 				i_pinned; 					// 是否被锁定
 	uint 				i_ino; 						// 索引结点的序列号
 	uint 				i_size; 					// 文件字节大小
 	uint 				i_blocks; 					// 文件所用的块数量
 	bool 				i_isdir; 					// 判断该文件是否为目录
 	super_block* 		i_sb; 						// 该结点对应的超级块
-	list 				i_dentry; 					// 指向该索引结点的所有目录项的链表
-	list_node			i_hash; 					// 用于加入哈希链表的结点
-	list_node 			i_LRU; 						// 用于加入最近最少使用链表的结点
+	list_head 			i_dentry; 					// 指向该索引结点的所有目录项的链表
+	list_head			i_hash; 					// 用于加入哈希链表的结点
+	list_head 			i_LRU; 						// 用于加入最近最少使用链表的结点
 	inode_op* 			i_iop; 						// 索引结点的操作
 	file_op* 			i_fop; 						// 索引结点对应文件的操作
 	address_space 		i_data; 					// 该结点的实际数据
@@ -98,23 +105,24 @@ struct _inode_op {
 // 目录项
 struct _dentry {
 	bool 				d_pinned; 					// 是否被锁定
-	list_node			d_hash; 					// 用于加入哈希链表的结点
-	list_node 			d_LRU; 						// 用于加入最近最少使用链表的结点
+	list_head			d_hash; 					// 用于加入哈希链表的结点
+	list_head 			d_LRU; 						// 用于加入最近最少使用链表的结点
 	uint 				d_count;                	// 当前的引用计数
     bool 				d_mounted;              	// 该目录项上是否挂载了文件系统
     inode* 				d_inode;               		// 对应的索引节点
     dentry* 			d_parent;              		// 父目录的目录项对象
     qstr 				d_name;                 	// 文件名
-    list_node 			d_sibling;                	// 同一目录下目录项链表
-    list 				d_subdirs;              	// 子目录项链表
-    list_node 			d_alias;                	// 指向同一个索引结点的目录项链表
+    list_head 			d_sibling;                	// 同一目录下目录项链表
+    list_head 			d_subdirs;              	// 子目录项链表
+    list_head 			d_alias;                	// 指向同一个索引结点的目录项链表
     dentry_op* 			d_op; 						// 目录项的操作
     super_block* 		d_sb; 						// 该目录项对应的超级块  
 };
 
 // 目录项的操作
 struct _dentry_op {
-
+	// 比较文件名，不同文件系统的比较方式不同，如FAT不区分大小写
+	int 		(*compare)			(const qstr a, const qstr b);
 };
 
 // 文件
@@ -152,6 +160,7 @@ struct _nameidata {
 void init_fs();
 dentry* get_root_dentry();
 dentry* get_pwd_dentry();
+DWord read_data(void *addr, uint size);
 
 // open.c
 file* fs_open(const char *filename, int flags, int mode);
