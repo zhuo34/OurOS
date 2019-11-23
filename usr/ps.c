@@ -120,6 +120,11 @@ void ps_parse_cmd() {
         }
         sd_write_block(sd_buffer, 7, 1);
         kernel_puts("sdwz\n");
+    } else if (kernel_strcmp(ps_buffer, "buddy") == 0) {
+        print_buddy_info();
+    } else if (kernel_strcmp(ps_buffer, "alloc") == 0) {
+        void * phy_addr = alloc_pages(4096);
+        kernel_printf("allocated phy_addr = %x\n", phy_addr);
     } else {
         kernel_puts(ps_buffer);
         kernel_puts(": command not found\n");

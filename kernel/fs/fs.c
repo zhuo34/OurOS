@@ -11,12 +11,12 @@ static 	MBR 	*sdCard_MBR;
 static Byte malloc_buffer[2048];
 static int malloc_index = 0;
 
-void* kmalloc(uint size) {
+void* kmalloc_fake(uint size) {
 	Byte* ret = malloc_buffer + malloc_index;
 	malloc_index += size;
 	return ret; 
 }
-void  kfree(void* p) {
+void  kfree_fake(void* p) {
 
 }
 
@@ -45,14 +45,14 @@ int read_MBR()
 	int 	error 			= NO_ERROR;
 
 	// 申请SD卡的MBR结构体
-    sdCard_MBR = (MBR*)kmalloc(sizeof(MBR));
+    sdCard_MBR = (MBR*)kmalloc_fake(sizeof(MBR));
     if (sdCard_MBR == nullptr) {
 		error = ERROR_NO_MEMORY;
 		goto err;
 	}
 	
 	// 申请buffer读取MBR数据
-	buf_MBR = (Byte*)kmalloc(SECTOR_SIZE);
+	buf_MBR = (Byte*)kmalloc_fake(SECTOR_SIZE);
 	if (buf_MBR == nullptr) {
 		error = ERROR_NO_MEMORY;
 		goto err;
@@ -85,9 +85,9 @@ int read_MBR()
 	goto exit;
 
 err:
-	kfree(sdCard_MBR);
+	kfree_fake(sdCard_MBR);
 exit:
-	kfree(buf_MBR);
+	kfree_fake(buf_MBR);
 	return error;
 
 }
