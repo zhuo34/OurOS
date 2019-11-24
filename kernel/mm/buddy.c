@@ -8,17 +8,13 @@ struct buddy_zone buddy_mm;
 void init_buddy()
 {
 	// allocate memory for buddy pages
-	// kernel_printf("allocate memory for buddy pages\n");
 	uint base_addr = (uint)bootmm_alloc_page(&boot_mm, boot_mm.page_num * sizeof(struct page), MMINFO_TYPE_KERNEL, 1 << PAGE_SHIFT);
-	// kernel_printf("base_addr %x\n", base_addr);
 	if (!base_addr) {
 		
 	}
 	void *virtual_addr = get_kernel_vaddr(base_addr);
-	// kernel_printf("virtual addr %x\n", virtual_addr);
 	all_pages = (struct page *)virtual_addr;
 	// init buddy pages
-	// kernel_printf("init buddy pages\n");
 	for (uint i = 0; i < boot_mm.page_num; i++) {
 		all_pages[i].bplevel = 0;
 		all_pages[i].used_info = BUDDY_RESERVED;
@@ -26,16 +22,10 @@ void init_buddy()
 	}
 	
 	// init buddy_mm
-	// kernel_printf("init buddy_mm\n");
 	uint kernel_reserved_btyes = boot_mm.info[0].start_addr + boot_mm.info[0].length;
-	// kernel_printf("boot_mm.info[0].start_addr = %x\n", boot_mm.info[0].start_addr);
-	// kernel_printf("boot_mm.info[0].length = %d\n", boot_mm.info[0].length);
 	uint kernel_reserved_pages = upper_align(kernel_reserved_btyes, 1 << PAGE_SHIFT) >> PAGE_SHIFT;
-	// kernel_printf("kernel_reserved_pages = %d\n", kernel_reserved_pages);
 	buddy_mm.start_pfn = upper_align(kernel_reserved_pages, 1 << MAX_BUDDY_ORDER);
 	buddy_mm.page_num = lower_align(boot_mm.page_num - buddy_mm.start_pfn, 1 << MAX_BUDDY_ORDER);
-	// kernel_printf("start_pfn = %d\n", buddy_mm.start_pfn);
-	// kernel_printf("page_num = %d\n", buddy_mm.page_num);
 	buddy_mm.pages = &all_pages[buddy_mm.start_pfn];
 	for (int i = 0; i < MAX_BUDDY_ORDER + 1; i++) {
 		INIT_LIST_HEAD(&(buddy_mm.free_area[i].freelist));
@@ -44,7 +34,6 @@ void init_buddy()
 	// init lock
 
 	// init free buddy pages
-	// kernel_printf("init free buddy pages\n");
 	for (uint i = 0; i < buddy_mm.page_num; i++) {
 		__free_pages(&buddy_mm, &buddy_mm.pages[i]);
 	}
@@ -68,24 +57,17 @@ void __free_pages(struct buddy_zone *mm, struct page *page)
 {
 	// lock
 
-	// kernel_printf("this_page_addr = %x\n", page);
 	uint this_page_idx = get_page_idx(page);
-	// kernel_printf("this_page_idx = %d\n", this_page_idx);
-	// kernel_printf("in zone = %d\n", page_idx_is_in_zone(mm, this_page_idx));
 	if (!page_idx_is_in_zone(mm, this_page_idx)) {
 		kernel_printf("Free a page not in this buddy zone!\n");
 		return;		
 	}
 	int bplevel = page->bplevel;
-	// kernel_printf("bplevel = %d\n", bplevel);
-	// kernel_printf("used_info = %d\n", page->used_info);
 	if (page->used_info == BUDDY_FREE) {
-		// kernel_printf("Free a free page!\n");
 		return;
 	}
 	while (bplevel < MAX_BUDDY_ORDER) {
 		uint buddy_page_idx = get_buddy_page_idx(this_page_idx, bplevel);
-		// kernel_printf("buddy_page_idx = %d\n", buddy_page_idx);
 		struct page *buddy_page = get_page_by_idx(buddy_page_idx);
 		if (bplevel != buddy_page->bplevel || buddy_page->used_info != BUDDY_FREE) {
 			break;
@@ -105,7 +87,11 @@ void __free_pages(struct buddy_zone *mm, struct page *page)
 
 void free_pages(void *addr)
 {
-	__free_pages(&buddy_mm, get_page_by_phy_addr(addr));
+	if (!get_low_bits((uint)addr, 12)) {
+		__free_pages(&buddy_mm, get_page_by_phy_addr(get_kernel_paddr(addr)));
+	} else {
+		kernel_printf("Buddy free invalid address!\n");
+	}
 }
 
 struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel)
@@ -159,16 +145,11 @@ void *alloc_pages(uint size)
 		n *= 2;
 		bplevel++;
 	}
-	kernel_printf("bplevel: %d\n", bplevel);
 	struct page *pagep = __alloc_pages(&buddy_mm, bplevel);
-	kernel_printf("page_addr: %x\n", pagep);
-	kernel_printf("page_num: %d\n", get_page_idx(pagep));
 	void *ret = nullptr;
 	if (pagep) {
 		ret = get_page_phy_addr(pagep);
 	}
-
-	kernel_printf("addr: %x\n", ret);
 	return ret;
 }
 

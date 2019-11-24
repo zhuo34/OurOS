@@ -53,35 +53,34 @@ void init_kernel() {
     log(LOG_OK, "Bootmem.");
     init_buddy();
     log(LOG_OK, "Buddy.");
-    test_buddy();
-    // init_slab();
-    // log(LOG_OK, "Slab.");
+    // test_buddy();
+    init_slab();
+    log(LOG_OK, "Slab.");
+    test_slab();
     log(LOG_END, "Memory Modules.");
 
-    while (1) {}
-
-    // // File system
-    // log(LOG_START, "File System.");
-    // init_fs();
-    // log(LOG_END, "File System.");
+    // File system
+    log(LOG_START, "File System.");
+    init_fs();
+    log(LOG_END, "File System.");
 
     // System call
-    // log(LOG_START, "System Calls.");
-    // init_syscall();
-    // log(LOG_END, "System Calls.");
+    log(LOG_START, "System Calls.");
+    init_syscall();
+    log(LOG_END, "System Calls.");
 
-    // // Process control
-    // log(LOG_START, "Process Control Module.");
-    // init_pc();
-    // log(LOG_END, "Process Control Module.");
-    // // Interrupts
-    // log(LOG_START, "Enable Interrupts.");
-    // init_interrupts();
-    // log(LOG_END, "Enable Interrupts.");
-    // // Init finished
-    // machine_info();
-    // *GPIO_SEG = 0x11223344;
+    // Process control
+    log(LOG_START, "Process Control Module.");
+    init_pc();
+    log(LOG_END, "Process Control Module.");
+    // Interrupts
+    log(LOG_START, "Enable Interrupts.");
+    init_interrupts();
+    log(LOG_END, "Enable Interrupts.");
+    // Init finished
+    machine_info();
+    *GPIO_SEG = 0x11223344;
 
-    // ps();
-    // osh();
+    ps();
+    osh();
 }

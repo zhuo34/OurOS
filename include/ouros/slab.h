@@ -4,7 +4,7 @@
 #include <ouros/mm.h>
 #include <ouros/list.h>
 
-#define SLAB_ALIGN 0x100
+#define SLAB_ALIGN 4
 #define KMEM_CACHE_NUM 12
 
 struct slab_head {
@@ -37,5 +37,7 @@ void init_slab();
 void *kmalloc(uint size);
 
 void kfree(void *objp);
+
+void test_slab();
 
 #endif // OUROS_SLAB_H
