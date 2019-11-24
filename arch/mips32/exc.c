@@ -11,6 +11,7 @@ exc_fn exceptions[32];
 void do_exceptions(unsigned int status, unsigned int cause, context* pt_context) {
     int index = cause >> 2;
     index &= 0x1f;
+    kernel_printf("do exception %d\n", index);
     if (exceptions[index]) {
         exceptions[index](status, cause, pt_context);
     } else {

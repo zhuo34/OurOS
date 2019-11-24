@@ -1,6 +1,9 @@
 #include <driver/vga.h>
 #include <ouros/utils.h>
 
+#pragma GCC push_options
+#pragma GCC optimize("O0")
+
 void* kernel_memcpy(void* dst, void* src, uint len) {
     Byte* dststr = dst;
     Byte* srcstr = src;
@@ -12,16 +15,15 @@ void* kernel_memcpy(void* dst, void* src, uint len) {
     return dst;
 }
 
-#pragma GCC push_options
-#pragma GCC optimize("O2")
 void* kernel_memset(void* dst, uchar data, uint len) {
+    // kernel_printf("in memset\n");
     uchar *p_dst = dst;
     while (len--) {
         *p_dst++ = data;
     }
+    // kernel_printf("out memset\n");
     return dst;
 }
-#pragma GCC pop_options
 
 uint* kernel_memset_uint(void* dst, uint value, uint len) {
     uint *p = (uint*)dst;
@@ -99,3 +101,4 @@ uint get_low_bits(uint src, uint n_bit)
     }
     return src & mask;
 }
+#pragma GCC pop_options

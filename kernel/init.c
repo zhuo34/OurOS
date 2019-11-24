@@ -53,9 +53,10 @@ void init_kernel() {
     log(LOG_OK, "Bootmem.");
     init_buddy();
     log(LOG_OK, "Buddy.");
-    test_buddy();
+    // test_buddy();
     init_slab();
     log(LOG_OK, "Slab.");
+    test_slab();
     log(LOG_END, "Memory Modules.");
 
     // File system
@@ -81,5 +82,5 @@ void init_kernel() {
     *GPIO_SEG = 0x11223344;
 
     ps();
-    // osh();
+    osh();
 }
