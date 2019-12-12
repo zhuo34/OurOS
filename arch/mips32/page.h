@@ -1,7 +1,9 @@
 #ifndef PAGE_H
 #define PAGE_H
 
-void init_pgtable();
+#include "exc.h"
+
+void init_tlb();
 
 typedef struct {
     unsigned int reserved1 : 12;
@@ -30,5 +32,12 @@ typedef struct {
     __EntryHi EntryHi;
     __PageMask PageMask;
 } PageTableEntry;
+
+
+void read_tlb();
+void read_tlb_index(uint index);
+void tlb_refill();
+void tlb_read_handler(unsigned int status, unsigned int cause, context* context);
+void tlb_write_handler(unsigned int status, unsigned int cause, context* context);
 
 #endif // PAGE_H

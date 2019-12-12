@@ -123,8 +123,8 @@ void ps_parse_cmd() {
     } else if (kernel_strcmp(ps_buffer, "buddy") == 0) {
         print_buddy_info();
     } else if (kernel_strcmp(ps_buffer, "alloc") == 0) {
-        void * phy_addr = alloc_pages(4096);
-        kernel_printf("allocated phy_addr = %x\n", phy_addr);
+        void * paddr = alloc_pages(4096);
+        kernel_printf("allocated paddr = %x\n", paddr);
     } else {
         kernel_puts(ps_buffer);
         kernel_puts(": command not found\n");

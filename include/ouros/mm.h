@@ -12,7 +12,18 @@
 #define KERNEL_MMSIZE		(MB << 4)
 #define KERNEL_PAGE_NUM		(KERNEL_MMSIZE >> PAGE_SHIFT)
 
-#define get_kernel_vaddr(phy_addr) ((void *)(((uint)(phy_addr)) | KERNEL_ENTRY))
+#define get_kernel_vaddr(paddr) ((void *)(((uint)(paddr)) | KERNEL_ENTRY))
 #define get_kernel_paddr(virtual_addr) ((void *)(((uint)(virtual_addr)) & (~KERNEL_ENTRY)))
+
+extern void init_bootmm();
+
+extern void init_buddy();
+extern void free_pages(void *addr);
+extern void *alloc_pages(uint size);
+extern void *alloc_one_page();
+
+extern void init_slab();
+extern void *kmalloc(uint size);
+extern void kfree(void *objp);
 
 #endif // OUROS_MM_H

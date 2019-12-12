@@ -75,8 +75,6 @@ void kernel_cache(unsigned int block_index) {
     );
 }
 
-#pragma GCC pop_options
-
 void kernel_serial_puts(char* str) {
     while (*str)
         *((unsigned int*)0xbfc09018) = *str++;
@@ -92,13 +90,9 @@ unsigned int is_bound(unsigned int val, unsigned int bound) {
 
 uint get_low_bits(uint src, uint n_bit)
 {
-    if (n_bit > 32) {
+    if (n_bit >= 32) {
         return src;
     }
-    uint mask = 0;
-    for (uint i = 0; i < n_bit; i++) {
-        mask = (mask << 1) + 1;
-    }
+    uint mask = (1 << n_bit) - 1;
     return src & mask;
 }
-#pragma GCC pop_options

@@ -4,7 +4,7 @@
 #include <ouros/type.h>
 
 // machine parameters
-#define MACHINE_MMSIZE (128 * 1024 * 1024)		// 128MB
+#define MACHINE_MMSIZE (512 * 1024 * 1024)		// 512 MB
 #define MACHINE_SDSIZE (32 * 1024 * 1024)		// 32M Sectors
 // #define PAGE_TABLE_SIZE 256 * 1024           // 4MB
 #define CHAR_VRAM_SIZE (128 * 32 *4)			// 128 * 32 * 4

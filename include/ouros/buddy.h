@@ -35,10 +35,16 @@ struct buddy_zone {
 extern struct page *all_pages;
 extern struct buddy_zone buddy_mm;
 
+#define get_page_by_pgn(pgn) ((all_pages) + (pgn))
+#define get_page_by_paddr(page_paddr) ( get_page_by_pgn( ((uint)(page_paddr)) >> PAGE_SHIFT ) )
+#define get_pgn(page) ((uint)((page) - (all_pages)))
+#define get_page_paddr(page) ((void *)(get_pgn(page) << PAGE_SHIFT))
+
 void init_buddy();
 
 void free_pages(void *addr);
 void *alloc_pages(uint size);
+void *alloc_one_page();
 
 void print_buddy_info();
 

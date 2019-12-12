@@ -3,7 +3,7 @@
 
 #include <ouros/slab.h>
 
-#define get_page_by_slab(slabp) (get_page_by_phy_addr(get_kernel_paddr(slabp)))
+#define get_page_by_slab(slabp) (get_page_by_paddr(get_kernel_paddr(slabp)))
 #define slab_is_full(cachep, slabp) ((slabp)->alloc_num == (cachep)->capacity)
 #define slab_is_empty(cachep, slabp) ((slabp)->alloc_num == 0)
 
