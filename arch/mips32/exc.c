@@ -14,7 +14,7 @@ void do_exceptions(unsigned int status, unsigned int cause, context* pt_context)
     if (exceptions[index]) {
         exceptions[index](status, cause, pt_context);
     } else {
-        
+        kernel_printf("do exception %d\n", index);
         while (1)
             ;
     }

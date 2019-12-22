@@ -35,7 +35,6 @@ void machine_info() {
 }
 
 void init_kernel() {
-    kernel_printf("<=== begin init ===>\n");
     // init_done = 0;
     kernel_clear_screen();
     // Exception
@@ -48,34 +47,34 @@ void init_kernel() {
     init_time();
 
     // Memory management
-    log(LOG_START, "Memory Modules.");
-    init_bootmm();
-    log(LOG_OK, "Bootmem.");
-    init_buddy();
-    log(LOG_OK, "Buddy.");
-    test_buddy();
-    init_slab();
-    log(LOG_OK, "Slab.");
-    log(LOG_END, "Memory Modules.");
+    // log(LOG_START, "Memory Modules.");
+    // init_bootmm();
+    // log(LOG_OK, "Bootmem.");
+    // init_buddy();
+    // log(LOG_OK, "Buddy.");
+    // test_buddy();
+    // init_slab();
+    // log(LOG_OK, "Slab.");
+    // log(LOG_END, "Memory Modules.");
 
     // File system
-    log(LOG_START, "File System.");
+    // log(LOG_START, "File System.");
     init_fs();
-    log(LOG_END, "File System.");
+    // log(LOG_END, "File System.");
 
     // System call
-    log(LOG_START, "System Calls.");
+    // log(LOG_START, "System Calls.");
     init_syscall();
-    log(LOG_END, "System Calls.");
+    // log(LOG_END, "System Calls.");
 
     // Process control
-    log(LOG_START, "Process Control Module.");
+    // log(LOG_START, "Process Control Module.");
     init_pc();
-    log(LOG_END, "Process Control Module.");
+    // log(LOG_END, "Process Control Module.");
     // Interrupts
-    log(LOG_START, "Enable Interrupts.");
+    // log(LOG_START, "Enable Interrupts.");
     init_interrupts();
-    log(LOG_END, "Enable Interrupts.");
+    // log(LOG_END, "Enable Interrupts.");
     // Init finished
     machine_info();
     *GPIO_SEG = 0x11223344;

@@ -8,6 +8,8 @@
 #include <ouros/time.h>
 #include <ouros/utils.h>
 
+#include "fs_cmd.h"
+
 char ps_buffer[64];
 int ps_buffer_index;
 
@@ -20,7 +22,7 @@ void test_syscall4() {
 }
 
 void callback(int keyCode, bool pressDown) {
-    // kernel_printf("keyCode: 0x%x, isUp: %d\n", keyCode, isUp);
+    kernel_printf("keyCode: 0x%x, pressDown: %d\n", keyCode, pressDown);
     if(pressDown) {
         if(keyCode == KEY_ARROW_LEFT){
             cursor.col--;
@@ -32,8 +34,22 @@ void callback(int keyCode, bool pressDown) {
     }
     
 }
-
+#include <ouros/fs/fs.h>
 void ps() {
+    print_prompt();
+    kernel_printf("pwd\n");
+    pwd();
+
+    mkdir("dir");
+
+    print_prompt();
+    kernel_printf("ls\n");
+    ls("");
+
+    print_prompt();
+    kernel_printf("mv 1.txt dir/1.txt\n");
+    mv("1.txt", "dir/1.txt");
+    
     kernel_printf("Press any key to enter shell.\n");
     kernel_getchar();
     char c;
@@ -41,7 +57,7 @@ void ps() {
     ps_buffer[0] = 0;
     kernel_clear_screen();
     kernel_printf("PowerShell\n");
-    kernel_printf("PS>");
+    print_prompt();
 
     register_keyboard_callback(callback);
 
@@ -120,6 +136,12 @@ void ps_parse_cmd() {
         }
         sd_write_block(sd_buffer, 7, 1);
         kernel_puts("sdwz\n");
+    } else if (kernel_strcmp(ps_buffer, "ls") == 0) {
+        ls(param);
+    } else if (kernel_strcmp(ps_buffer, "cd") == 0) {
+        cd(param);
+    } else if (kernel_strcmp(ps_buffer, "pwd") == 0) {
+        pwd();
     } else {
         kernel_puts(ps_buffer);
         kernel_puts(": command not found\n");

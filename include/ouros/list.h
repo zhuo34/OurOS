@@ -68,6 +68,18 @@ static inline void list_replace_init(struct list_head *old, struct list_head *ne
 	INIT_LIST_HEAD(old);
 }
 
+static inline void list_swap(struct list_head *a, struct list_head *b)
+{
+	// if b before a, may error
+	struct list_head temp;
+	temp.prev = b->prev;
+	temp.next = b->next;
+
+	list_del(a);
+	list_del(b);
+	list_add(b, a->prev);
+	list_add_tail(a, temp.next);
+}
 
 static inline void list_move(struct list_head *list, struct list_head *head)
 {
@@ -133,6 +145,21 @@ static inline bool list_contain_node(const struct list_head *node, const struct 
 		}
 	}
 	return ret;
+}
+
+static inline void list_sort(struct list_head *head, 
+							 int (*cmp)(const struct list_head *, const struct list_head *))
+{
+	struct list_head *start;
+	struct list_head *end;
+	for (end = head; end != head->next; end = end->prev) {
+		for(start = head->next; start->next != end; start = start->next) {
+			if(cmp(start, start->next) > 0) {
+				list_swap(start, start->next);
+				start = start->prev;
+			}
+		}
+	}
 }
 
 #endif // OUROS_LIST_H

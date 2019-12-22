@@ -8,8 +8,9 @@
 
 #include <ouros/fs/fat.h>
 #include <ouros/fs/ext2.h>
-#include <ouros/fs/ntfs.h>
 #include <ouros/fs/fscache.h>
+
+#include "../usr/fs_cmd.h"
 
 // temp
 #define __max_buf  (1<<16)
@@ -20,13 +21,15 @@ void* kmalloc_fake(uint size) {
 	Byte* ret = malloc_buffer + malloc_index;
 	// kernel_printf("before kmalloc: %d\n", malloc_index);
 	malloc_index += size;
+	malloc_index = (malloc_index + 3) & ~(0x3);
 	// kernel_printf("after kmalloc: %d\n", malloc_index);
 	if(malloc_index > __max_buf)
 		ret = nullptr;
+	// kernel_printf("malloc addr: 0x%X\n", ret);
 	return ret; 
 }
 void  kfree_fake(void* p) {
-
+	// kernel_printf("now stack index: %d\n", malloc_index);
 }
 
 // 超级块链表
@@ -58,14 +61,42 @@ void init_fs()
 		log(LOG_OK, "read_MBR");
 	}
 
-	// test
-	log(LOG_START, "test fopen");
-	file* f = fs_open("/1.txt", OPEN_FIND, FMODE_READ);
-	if(IS_ERR_PTR(f)){
-		log(LOG_FAIL, "fopen, error code %d", error);
-	} else {
-		log(LOG_OK, "fopen");
+	// 初始化根目录项
+	super_block *sb = container_of(sb_list->next, super_block, s_listnode);
+	root_dentry = sb->s_root;
+	d_inc_count(root_dentry);
+
+	// 预读取根目录并创建对应的文件夹
+	pwd_dentry = root_dentry;
+	mkdir("/home");
+	mkdir("/mnt");
+
+	// 挂载其他分区的文件系统
+	char name[] = "/mnt/fs0";
+	const int index = 7;
+	list_head *p;
+	list_for_each(p, sb_list) {
+		super_block *cur_sb = container_of(p, super_block, s_listnode);
+		if(cur_sb == sb)
+			continue;
+
+		name[index] ++;
+		file *fp = fs_open(name, F_MODE_READ_WRITE | F_MODE_DIR_MASK);
+		if(IS_ERR_PTR(fp)) {
+			log(LOG_FAIL, "mount to %s", name);
+			return;
+		}
+		dentry *entry = fp->f_dentry;
+		entry->d_mounted = true;
+		cur_sb->s_mnt.mnt_parent = &sb->s_mnt;
+		cur_sb->s_mnt.mnt_mntpoint = entry;
+
+		fs_close(fp);
+
 	}
+
+	// 进入主目录
+    cd("");
 
 }
 
@@ -93,7 +124,7 @@ int read_MBR()
 		goto exit;
 	}
 	INIT_LIST_HEAD(sb_list);
-
+	
 	// 解析MBR数据
 	// 主引导记录占446字节，之后的数据为硬盘分区表(DPT) Disk Partition Table
 	DPT *curDPT = (DPT*)(buf_MBR + 446);
@@ -112,22 +143,12 @@ int read_MBR()
 		}
 		// 根据文件系统类型创建超级块
 		super_block *sb = type->get_sb(base_addr);
-		if(sb == nullptr) {
-			error = -ERROR_NO_MEMORY;
+		if(IS_ERR_PTR(sb)) {
+			error = PTR_ERR(sb);
 			goto exit;
 		}
-
-		list_add(&sb->s_listnode, &sb_list);
+		list_add_tail(&sb->s_listnode, sb_list);
 	}
-
-	// 初始化根目录项
-	list_head *cur_sb = sb_list->next;
-	super_block *sb = container_of(cur_sb, super_block, s_listnode);
-	root_dentry = sb->s_root;
-
-	// 预读取根目录并创建对应的文件夹
-
-	// 挂载其他分区的文件系统
 
 exit:
 	kfree_fake(buf_MBR);
@@ -150,12 +171,15 @@ file_system_type* get_fs_type(Byte systemID)
 		type = get_fs_type_fat32();
 	} else if(SYSTEM_ID_EXT2(systemID)) {
 		type = get_fs_type_ext2();
-	} else if(SYSTEM_ID_NTFS(systemID)) {
-		type = get_fs_type_ntfs();
 	}
 
 	// kernel_printf("0x%X  %s\n", systemID, type? type->name: "unknown");
 	return type;
+}
+
+list_head* get_sb_list_entry()
+{
+	return sb_list;
 }
 
 dentry* get_root_dentry()
@@ -166,4 +190,29 @@ dentry* get_root_dentry()
 dentry* get_pwd_dentry()
 {
 	return pwd_dentry;
+}
+
+void set_pwd_dentry(dentry* entry)
+{
+	pwd_dentry = entry;
+}
+
+void d_inc_count(dentry* entry) {
+	entry->d_count ++;
+	list_move(&entry->d_LRU, &get_fscache(D_CACHE)->LRU);
+}
+
+void d_dec_count(dentry* entry) {
+	entry->d_count --;
+	list_move(&entry->d_LRU, &get_fscache(D_CACHE)->LRU);
+}
+
+void i_inc_count(inode* node) {
+	node->i_count ++;
+	list_move(&node->i_LRU, &get_fscache(I_CACHE)->LRU);
+}
+
+void i_dec_count(inode* node) {
+	node->i_count --;
+	list_move(&node->i_LRU, &get_fscache(I_CACHE)->LRU);
 }
