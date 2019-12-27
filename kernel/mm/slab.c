@@ -3,6 +3,9 @@
 
 #include <driver/vga.h>
 
+#pragma GCC push_options
+#pragma GCC optimize("O0")
+
 struct kmem_cache kmem_caches[KMEM_CACHE_NUM];
 uint kmem_cache_size[KMEM_CACHE_NUM] = {8, 16, 32, 64,96, 128, 192, 256, 512, 1024, 1536, 2048};
 
@@ -82,6 +85,7 @@ void *kmem_cache_alloc(struct kmem_cache *cachep)
 				kernel_printf("No buddy page for slab!\n");
 				return ret;
 			} else {
+				pagep->virtual = get_kernel_vaddr(get_page_paddr(pagep));
 				pagep->used_info = BUDDY_SLAB;
 				pagep->cachep = cachep;
 				list_add(&pagep->list, &cachep->node.free);
@@ -151,10 +155,13 @@ void *kmalloc(uint size)
 		}
 	} else {
 		ret = alloc_pages(size);
+		if (ret) {
+			ret = get_kernel_vaddr(ret);
+		}
 	}
-	if (ret) {
-		ret = get_kernel_vaddr(ret);
-	}
+	// kernel_printf("kmalloc %x\n", ret);
+	// while (1);
+
 	return ret;
 }
 
@@ -233,3 +240,5 @@ void test_slab()
 
 	// kfree(addrs);
 }
+
+#pragma GCC pop_options

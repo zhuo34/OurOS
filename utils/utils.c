@@ -16,12 +16,11 @@ void* kernel_memcpy(void* dst, void* src, uint len) {
 }
 
 void* kernel_memset(void* dst, uchar data, uint len) {
-    // kernel_printf("in memset\n");
     uchar *p_dst = dst;
     while (len--) {
-        *p_dst++ = data;
+        *p_dst = data;
+        p_dst ++;
     }
-    // kernel_printf("out memset\n");
     return dst;
 }
 
@@ -57,9 +56,6 @@ int pow(int x, int z) {
     return ret;
 }
 
-#pragma GCC push_options
-#pragma GCC optimize("O0")
-
 void kernel_cache(unsigned int block_index) {
     // block_index = block_index | 0x80000000;
     asm volatile(
@@ -74,8 +70,6 @@ void kernel_cache(unsigned int block_index) {
         : "r"(block_index)
     );
 }
-
-#pragma GCC pop_options
 
 void kernel_serial_puts(char* str) {
     while (*str)
@@ -92,13 +86,11 @@ unsigned int is_bound(unsigned int val, unsigned int bound) {
 
 uint get_low_bits(uint src, uint n_bit)
 {
-    if (n_bit > 32) {
+    if (n_bit >= 32) {
         return src;
     }
-    uint mask = 0;
-    for (uint i = 0; i < n_bit; i++) {
-        mask = (mask << 1) + 1;
-    }
+    uint mask = (1 << n_bit) - 1;
     return src & mask;
 }
+
 #pragma GCC pop_options
