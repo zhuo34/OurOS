@@ -44,14 +44,14 @@ super_block* get_sb_fat32(DWord base_sec)
 	super_block* sb_ret = nullptr;
 
 	// 申请缓存区读取扇区数据
-	Byte *buf = (Byte*)kmalloc_fake(SECTOR_SIZE);
+	Byte *buf = (Byte*)kmalloc (SECTOR_SIZE);
 	if (buf == nullptr) {
 		sb_ret = ERR_PTR(-ERROR_NO_MEMORY);
 		goto exit;
 	}
 	
 	// 初始化FAT32系统有关信息
-	fs_info_fat32* fs_info = (fs_info_fat32*)kmalloc_fake(sizeof(fs_info_fat32));
+	fs_info_fat32* fs_info = (fs_info_fat32*)kmalloc (sizeof(fs_info_fat32));
 	// 从SD卡读取FSINFO扇区信息
 	if (!sd_read_block(buf, base_sec + 1, 1)) {
 		sb_ret = ERR_PTR(-ERROR_READ_SDCARD);
@@ -71,7 +71,7 @@ super_block* get_sb_fat32(DWord base_sec)
 		fs_info->info_next_clu = dbr->dbr_root_clu;
 
 	// 构建超级块super_block
-	sb_ret = (super_block*)kmalloc_fake(sizeof(super_block));
+	sb_ret = (super_block*)kmalloc (sizeof(super_block));
 	if (sb_ret == nullptr) {
 		sb_ret = ERR_PTR(-ERROR_NO_MEMORY);
 		goto exit;
@@ -133,7 +133,7 @@ super_block* get_sb_fat32(DWord base_sec)
 	mnt->mnt_sb = sb_ret;
 
 exit:
-	kfree_fake(buf);
+	kfree (buf);
 	return sb_ret;
 }
 
@@ -143,7 +143,7 @@ DWord read_fat(DWord fat_base_sec, DWord clu_num)
 	DWord off_sec = off_bytes >> SECTOR_SHIFT;
 
 	DWord ret;
-	Byte *buf = (Byte*)kmalloc_fake(SECTOR_SIZE);
+	Byte *buf = (Byte*)kmalloc (SECTOR_SIZE);
 	if (buf == nullptr) {
 		ret = -ERROR_NO_MEMORY;
 	} else if (!sd_read_block(buf, fat_base_sec + off_sec, 1)) {
@@ -160,7 +160,7 @@ int write_fat(DWord fat_base_sec, DWord clu_num, DWord value)
 	DWord off_sec = off_bytes >> SECTOR_SHIFT;
 
 	int error = NO_ERROR;
-	Byte *buf = (Byte*)kmalloc_fake(SECTOR_SIZE);
+	Byte *buf = (Byte*)kmalloc (SECTOR_SIZE);
 	if (buf == nullptr) {
 		error = -ERROR_NO_MEMORY;
 	} else if (!sd_read_block(buf, fat_base_sec + off_sec, 1)) {
@@ -192,7 +192,7 @@ exit:
 int update_next_clu(super_block *sb, DWord value)
 {
 	int error = NO_ERROR;
-	Byte *buf = (Byte*)kmalloc_fake(SECTOR_SIZE);
+	Byte *buf = (Byte*)kmalloc (SECTOR_SIZE);
 	if(!buf) {
 		error = -ERROR_NO_MEMORY;
 		goto exit;
@@ -240,7 +240,7 @@ void convert_8dot3_to_normal(const struct filename_8dot3* src, qstr* dst)
 {
 	// 申请字符串内存，大小为8字节名称 + 3字节扩展名 + 1字节'.' + 1字节'\0'
 	// kernel_printf("before: %s.%s\n", src->name, src->ext);
-	char* name = (char*)kmalloc_fake(8 + 3 + 1 + 1);
+	char* name = (char*)kmalloc (8 + 3 + 1 + 1);
 	int len = 0;
 
 	// 填写对应的名字，遇到空格结束
@@ -315,7 +315,7 @@ exit:
 
 inode* alloc_inode_fat32(super_block* sb, uint base_blk_addr, uint size, bool isdir)
 {
-	inode *ret = (inode*)kmalloc_fake(sizeof(inode));
+	inode *ret = (inode*)kmalloc (sizeof(inode));
 	if (!ret) {
 		ret = ERR_PTR(-ERROR_NO_MEMORY);
 		goto exit;
@@ -337,7 +337,7 @@ inode* alloc_inode_fat32(super_block* sb, uint base_blk_addr, uint size, bool is
 	ret->i_blocks 	= 0;
 	uint clu_num = base_blk_addr;
 	while(clu_num != FAT_ITEM_END) {
-		fs_map* map = (fs_map*)kmalloc_fake(sizeof(fs_map));
+		fs_map* map = (fs_map*)kmalloc (sizeof(fs_map));
 		if (map == nullptr) {
 			ret = ERR_PTR(-ERROR_NO_MEMORY);
 			goto exit;
@@ -362,7 +362,7 @@ exit:
 
 dentry* alloc_dentry_fat32(super_block* sb, inode* node, dentry* parent, const qstr name)
 {
-	dentry *ret = (dentry*)kmalloc_fake(sizeof(dentry));
+	dentry *ret = (dentry*)kmalloc (sizeof(dentry));
 	if (!ret) {
 		ret = ERR_PTR(-ERROR_NO_MEMORY);
 		goto exit;
@@ -493,7 +493,7 @@ int expand_fat32(inode* node, int num)
 		last_clu_idx = free_clu_idx;
 
 		// 更新inode信息
-		fs_map* map = (fs_map*)kmalloc_fake(sizeof(fs_map));
+		fs_map* map = (fs_map*)kmalloc (sizeof(fs_map));
 		if (map == nullptr) {
 			error = -ERROR_NO_MEMORY;
 			goto exit;
@@ -608,7 +608,7 @@ modify_node:
 		p = p->prev;
 		list_del(cur);
 		fs_map *map = container_of(cur, fs_map, map_node);
-		kfree_fake(map);
+		kfree (map);
 	}
 
 exit:

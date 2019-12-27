@@ -3,12 +3,14 @@
 
 #include <ouros/slab.h>
 
-#define get_page_by_slab(slabp) (get_page_by_phy_addr(get_kernel_paddr(slabp)))
+#define get_page_by_slab(slabp) (get_page_by_paddr(get_kernel_paddr(slabp)))
 #define slab_is_full(cachep, slabp) ((slabp)->alloc_num == (cachep)->capacity)
+#define slab_is_empty(cachep, slabp) ((slabp)->alloc_num == 0)
 
 void init_kmem_cache(struct kmem_cache *cachep, uint size);
 void init_kmem_cache_node(struct kmem_cache_node *cache_nodep);
 
+void init_object_in_page(struct kmem_cache *cachep, struct page *pagep);
 void *alloc_object(struct kmem_cache *cachep, struct slab_head *slabp);
 void alloc_new_object_in_page(struct kmem_cache *cachep, struct slab_head *slabp);
 

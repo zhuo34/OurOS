@@ -25,6 +25,7 @@ void kernel_serial_puts(char* str);
 void kernel_serial_putc(char c);
 unsigned int is_bound(unsigned int val, unsigned int bound);
 uint get_low_bits(uint src, uint n_bit);
+uint set_bits(uint src, uint n_bit);
 
 typedef unsigned char* va_list;
 #define _INTSIZEOF(n) ((sizeof(n) + sizeof(unsigned int) - 1) & ~(sizeof(unsigned int) - 1))

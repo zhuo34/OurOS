@@ -7,18 +7,23 @@ struct bootmm_sys boot_mm;
 void init_bootmm()
 {
 	// init boot_mm
+	// kernel_printf("init boot_mm\n");
 	kernel_memset(&boot_mm, 0, sizeof(boot_mm));
 	// init physical memory size and page frame number
+	// kernel_printf("init physical memory size and page frame number\n");
 	boot_mm.phymm_size = get_phymm_size();
 	boot_mm.page_num = boot_mm.phymm_size >> PAGE_SHIFT;
 	// init page_map
+	// kernel_printf("init page_map\n");
 	kernel_memset(boot_mm.page_map, PAGE_FREE, MACHINE_PAGE_NUM);
 	// init info
+	// kernel_printf("init info\n");
 	boot_mm.info_cnt = 0;
 	// alloc kernel memory 16M
+	// kernel_printf("alloc kernel memory 16M\n");
 	uint kmm_size = 16 * MB;
 	uint kmm_pfn = kmm_size >> PAGE_SHIFT;
-	insert_bootmm_info(&boot_mm, 0, kmm_size - 1, MMINFO_TYPE_KERNEL);
+	insert_bootmm_info(&boot_mm, 0, kmm_size, MMINFO_TYPE_KERNEL);
 	kernel_memset(boot_mm.page_map, PAGE_USED, kmm_pfn);
 }
 
@@ -26,23 +31,23 @@ uint insert_bootmm_info(struct bootmm_sys *mm, uint start_addr, uint length, uin
 {
 	uint ret = 0;
 	for (int i = 0; i < mm->info_cnt; i++) {
-		struct bootmm_info this_info = mm->info[i];
-		if (this_info.type != type)
+		struct bootmm_info *this_info = &mm->info[i];
+		if (this_info->type != type)
 			continue;
-		if (this_info.start_addr + this_info.length == start_addr) {
-			struct bootmm_info next_info = mm->info[i+1];
-			if (next_info.type == type && start_addr + length == next_info.start_addr) {
-				this_info.length += length + next_info.length;
+		if (this_info->start_addr + this_info->length == start_addr) {
+			struct bootmm_info *next_info = &mm->info[i+1];
+			if (next_info->type == type && start_addr + length == next_info->start_addr) {
+				this_info->length += length + next_info->length;
 				delete_bootmm_info(mm, i+1);
 				ret = 1;
 			} else {
-				this_info.length += length;
+				this_info->length += length;
 				ret = 2;
 			}
 			break;
-		} else if (start_addr + length == this_info.length) {
-			this_info.start_addr = start_addr;
-			this_info.length += length;
+		} else if (start_addr + length == this_info->length) {
+			this_info->start_addr = start_addr;
+			this_info->length += length;
 			ret = 3;
 			break;
 		}
@@ -83,11 +88,11 @@ uint split_bootmm_info(struct bootmm_sys *mm, uint index, uint split_addr_start)
 		return 0;
 	if (mm->info_cnt == MAX_MMINFO_NUM)
 		return 0;
-	struct bootmm_info mminfo = mm->info[index];
-	if (split_addr_start > mminfo.start_addr && split_addr_start < mminfo.start_addr + mminfo.length) {
-		uint temp = mminfo.length;
-		mminfo.length = split_addr_start - mminfo.start_addr;
-		set_bootmm_info(mm, mm->info_cnt++, split_addr_start, temp - mminfo.length, mminfo.type);
+	struct bootmm_info *mminfo = &mm->info[index];
+	if (split_addr_start > mminfo->start_addr && split_addr_start < mminfo->start_addr + mminfo->length) {
+		uint temp = mminfo->length;
+		mminfo->length = split_addr_start - mminfo->start_addr;
+		set_bootmm_info(mm, mm->info_cnt++, split_addr_start, temp - mminfo->length, mminfo->type);
 		return 1;
 	}
 	return 0;

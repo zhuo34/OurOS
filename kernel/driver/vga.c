@@ -230,7 +230,8 @@ void kernel_putchar_at_color(int ch, int fgColor, int bgColor, int row, int col)
     row = row & 0x1F;
     col = col & 0x7F;
 
-    uint *p = CHAR_VRAM + row * VGA_SCREEN_MAX_COL + col;
+    // max col = 128
+    uint *p = CHAR_VRAM + (row << 7) + col;
     *p = ((bgColor & 0xFFF) << 20) + ((fgColor & 0xFFF) << 8) + (ch & 0xFF);
 }
 

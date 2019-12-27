@@ -10,27 +10,9 @@
 #include <ouros/fs/ext2.h>
 #include <ouros/fs/fscache.h>
 
+#include <ouros/mm.h>
+
 #include "../usr/fs_cmd.h"
-
-// temp
-#define __max_buf  (1<<16)
-static Byte malloc_buffer[__max_buf];
-static int malloc_index = 0;
-
-void* kmalloc_fake(uint size) {
-	Byte* ret = malloc_buffer + malloc_index;
-	// kernel_printf("before kmalloc: %d\n", malloc_index);
-	malloc_index += size;
-	malloc_index = (malloc_index + 3) & ~(0x3);
-	// kernel_printf("after kmalloc: %d\n", malloc_index);
-	if(malloc_index > __max_buf)
-		ret = nullptr;
-	// kernel_printf("malloc addr: 0x%X\n", ret);
-	return ret; 
-}
-void  kfree_fake(void* p) {
-	// kernel_printf("now stack index: %d\n", malloc_index);
-}
 
 // 超级块链表
 static list_head *sb_list;
@@ -40,7 +22,6 @@ static dentry *pwd_dentry;
 
 void init_fs()
 {
-	malloc_index = 0;
 	int error = NO_ERROR;
 
 	// 初始化文件系统缓存区
@@ -105,7 +86,7 @@ int read_MBR()
 	int error = NO_ERROR;
 
 	// 申请buffer读取MBR数据
-	Byte* buf_MBR = (Byte*)kmalloc_fake(SECTOR_SIZE);
+	Byte* buf_MBR = (Byte*)kmalloc (SECTOR_SIZE);
 	if (buf_MBR == nullptr) {
 		error = -ERROR_NO_MEMORY;
 		goto exit;
@@ -118,7 +99,7 @@ int read_MBR()
 	}
 
 	// 初始化超级块链表
-	sb_list = (list_head*)kmalloc_fake(sizeof(list_head));
+	sb_list = (list_head*)kmalloc (sizeof(list_head));
 	if(IS_ERR_PTR(sb_list)) {
 		error = PTR_ERR(sb_list);
 		goto exit;
@@ -151,7 +132,7 @@ int read_MBR()
 	}
 
 exit:
-	kfree_fake(buf_MBR);
+	kfree (buf_MBR);
 	return error;
 }
 

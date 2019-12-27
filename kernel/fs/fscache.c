@@ -14,14 +14,14 @@ fscache* get_fscache(int cache_type)
 
 fspage* alloc_fspage(uint base_sec, uint blk_size)
 {
-	fspage *page = (fspage*)kmalloc_fake(sizeof(fspage));
+	fspage *page = (fspage*)kmalloc (sizeof(fspage));
 	if(!page) {
 		page = ERR_PTR(-ERROR_NO_MEMORY);
 		goto exit;
 	}
-	page->p_data = (Byte*)kmalloc_fake(blk_size);
+	page->p_data = (Byte*)kmalloc (blk_size);
 	if(!page->p_data) {
-		kfree_fake(page);
+		kfree (page);
 		page = ERR_PTR(-ERROR_NO_MEMORY);
 		goto exit;
 	}
@@ -34,8 +34,8 @@ fspage* alloc_fspage(uint base_sec, uint blk_size)
 
 	// 读数据
 	if(!sd_read_block(page->p_data, base_sec, page->p_sec_cnt)) {
-		kfree_fake(page->p_data);
-		kfree_fake(page);
+		kfree (page->p_data);
+		kfree (page);
 		page = ERR_PTR(-ERROR_READ_SDCARD);
 	}
 
@@ -74,7 +74,7 @@ fspage* get_fspage(list_head* fs_map_entry, uint blksize)
 int init_fscache()
 {
 	int error = NO_ERROR;
-	cache_array = (fscache*)kmalloc_fake(sizeof(fscache) * CACHE_TYPE_CNT);
+	cache_array = (fscache*)kmalloc (sizeof(fscache) * CACHE_TYPE_CNT);
 	if(!cache_array) {
 		error = -ERROR_NO_MEMORY;
 	} else {
@@ -90,7 +90,7 @@ void init_fscache_info(fscache *cache, int capacity)
 {
 	cache->size = 0;
 	cache->capacity = capacity;
-	cache->hash = (list_head*)kmalloc_fake(sizeof(list_head) * HASH_SIZE);
+	cache->hash = (list_head*)kmalloc (sizeof(list_head) * HASH_SIZE);
 	for(int i=0; i<HASH_SIZE; i++) {
 		INIT_LIST_HEAD(&cache->hash[i]);
 	}
@@ -253,9 +253,9 @@ void free_dentry(dentry* entry)
 	}
 
 	if((DWord)entry->d_name.name > 0x81000000) {
-		kfree_fake((void*)entry->d_name.name);
+		kfree ((void*)entry->d_name.name);
 	}
-	kfree_fake(entry);
+	kfree (entry);
 }
 
 void free_inode (inode*  node)
@@ -273,10 +273,10 @@ void free_inode (inode*  node)
 		list_del(cur);
 		fs_map *map = container_of(cur, fs_map, map_node);
 		free_fspage(map->map_page);
-		kfree_fake(map);
+		kfree (map);
 	}
 	
-	kfree_fake(node);
+	kfree (node);
 }
 
 void free_fspage(fspage* page)
@@ -289,8 +289,8 @@ void free_fspage(fspage* page)
 
 	container_of(page, fs_map, map_page)->map_page = nullptr;
 
-	kfree_fake(page->p_data);
-	kfree_fake(page);
+	kfree (page->p_data);
+	kfree (page);
 }
 
 // 在缓存中查找

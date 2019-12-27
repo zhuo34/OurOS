@@ -243,8 +243,7 @@ static inline int file_last_blk_remain(file *fp)
 	return node->i_blocks * sb->s_blocksize - fp->f_size;
 }
 
-// 假的malloc操作
-void* kmalloc_fake(uint size);
-void  kfree_fake(void* p);
+extern void* kmalloc (uint size);
+extern void  kfree (void* p);
 
 #endif

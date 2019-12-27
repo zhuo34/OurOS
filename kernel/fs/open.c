@@ -50,7 +50,7 @@ int fs_close(file *fp)
 
 	// 释放file空间
 	d_dec_count(fp->f_dentry);
-	kfree_fake(fp);
+	kfree (fp);
 exit:
 	return error;
 }
@@ -222,7 +222,7 @@ exit:
 
 file* dentry_open_file(dentry* entry, uint mode)
 {
-	file *ret = (file*)kmalloc_fake(sizeof(file));
+	file *ret = (file*)kmalloc (sizeof(file));
 	if (!ret) {
 		ret = ERR_PTR(-ERROR_NO_MEMORY);
 		goto exit;
