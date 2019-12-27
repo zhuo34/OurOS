@@ -16,12 +16,11 @@ void* kernel_memcpy(void* dst, void* src, uint len) {
 }
 
 void* kernel_memset(void* dst, uchar data, uint len) {
-    // kernel_printf("in memset\n");
     uchar *p_dst = dst;
     while (len--) {
-        *p_dst++ = data;
+        *p_dst = data;
+        p_dst ++;
     }
-    // kernel_printf("out memset\n");
     return dst;
 }
 
@@ -56,9 +55,6 @@ int pow(int x, int z) {
     }
     return ret;
 }
-
-#pragma GCC push_options
-#pragma GCC optimize("O0")
 
 void kernel_cache(unsigned int block_index) {
     // block_index = block_index | 0x80000000;
@@ -96,3 +92,5 @@ uint get_low_bits(uint src, uint n_bit)
     uint mask = (1 << n_bit) - 1;
     return src & mask;
 }
+
+#pragma GCC pop_options

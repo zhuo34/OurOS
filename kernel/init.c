@@ -1,7 +1,7 @@
 #include <arch.h>
 #include <exc.h>
 #include <intr.h>
-#include <page.h>
+#include <tlb.h>
 
 #include <driver/ps2.h>
 #include <driver/vga.h>

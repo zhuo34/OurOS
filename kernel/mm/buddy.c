@@ -125,7 +125,7 @@ struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel)
 		struct page *page_alloc = get_page_by_pgn(free_pgn);
 		page_alloc->bplevel = bplevel;
 		page_alloc->used_info = BUDDY_ALLOCED;
-		page_alloc->virtual = get_kernel_vaddr(get_page_paddr(page_alloc));
+		page_alloc->virtual = nullptr;
 		page_alloc->cachep = nullptr;
 		ret = page_alloc;
 	} else {
