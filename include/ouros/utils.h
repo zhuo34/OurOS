@@ -33,4 +33,14 @@ typedef unsigned char* va_list;
 #define va_arg(ap, t) (*(t*)((ap += _INTSIZEOF(t)) - _INTSIZEOF(t)))
 #define va_end(ap) (ap = (va_list)0)
 
+static inline int kernel_strlen(const char *str)
+{
+	int len = 0;
+	const char *p = str;
+	while(*p++)
+		len ++;
+		
+	return len;
+}
+
 #endif // OUROS_UITILS_H

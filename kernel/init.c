@@ -37,7 +37,6 @@ void machine_info() {
 }
 
 void init_kernel() {
-    kernel_printf("<=== begin init ===>\n");
     // init_done = 0;
     kernel_clear_screen();
     // Exception
@@ -59,16 +58,27 @@ void init_kernel() {
     log(LOG_OK, "Slab.");
     log(LOG_END, "Memory Modules.");
 
-    test_tlb_refill();
+    // File system
+    log(LOG_START, "File System.");
+    init_fs();
+    log(LOG_END, "File System.");
 
-    while (1) {
-        
-    }
+    // System call
+    // log(LOG_START, "System Calls.");
+    // init_syscall();
+    // log(LOG_END, "System Calls.");
 
-    // // File system
-    // log(LOG_START, "File System.");
-    // init_fs();
-    // log(LOG_END, "File System.");
+    // // Process control
+    // log(LOG_START, "Process Control Module.");
+    // init_pc();
+    // log(LOG_END, "Process Control Module.");
+    // // Interrupts
+    // log(LOG_START, "Enable Interrupts.");
+    // init_interrupts();
+    // log(LOG_END, "Enable Interrupts.");
+    // Init finished
+    machine_info();
+    *GPIO_SEG = 0x11223344;
 
     // // System call
     // log(LOG_START, "System Calls.");
@@ -87,6 +97,6 @@ void init_kernel() {
     // machine_info();
     // *GPIO_SEG = 0x11223344;
 
-    // ps();
+    ps();
     // osh();
 }
