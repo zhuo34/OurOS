@@ -52,4 +52,6 @@ void *swap_one_page(struct mm_struct *mm, void *vaddr);
 
 int find_vma(struct mm_struct *mm, void *vaddr);
 
+void *mmap(const char *file_name);
+
 #endif // OUROS_VM_H

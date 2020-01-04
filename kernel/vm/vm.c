@@ -7,6 +7,7 @@
 #include <ouros/utils.h>
 #include <ouros/buddy.h>
 #include <driver/vga.h>
+#include <ouros/error.h>
 
 #pragma GCC push_options
 #pragma GCC optimize("O0")
@@ -206,6 +207,23 @@ void free_mm_struct(struct mm_struct *mm)
 	}
 	kfree(mm->pgd);
 	kfree(mm);
+}
+
+void *mmap(const char *file_name)
+{
+	void *ret = nullptr;
+
+	file *fp = fs_open(file_name, F_MODE_READ);
+	if (IS_ERR_PTR(fp)) {
+		return ret;
+	}
+	void *buf = (void *)0x4;
+	while (!eof(fp)) {
+		fs_read(fp, buf, 1);
+	}
+	fs_close(fp);
+
+	return ret;
 }
 
 #pragma GCC pop_options
