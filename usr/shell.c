@@ -46,7 +46,7 @@ void parse_cmd(char* cmd)
 
     int len = kernel_strlen(cmd) + 1;
     // 扫描一遍字符串
-    while (len--)
+    while (cmd[cmdIndex] && cmdIndex < MAX_COMMAND_LENGTH)
     {
         // 正常字符
         if (' ' != cmd[cmdIndex] && '\0' != cmd[cmdIndex] && '\n' != cmd[cmdIndex])
@@ -116,8 +116,13 @@ void parse_cmd(char* cmd)
 // 子进程执行命令
 void exec_cmd(struct command* cmd)
 {
-    kernel_printf("%s\n", cmd->cmdName);
-
+    // kernel_printf("%s\n", cmd->cmdName);
+    // struct argumentNode* thisArg = cmd->argList->nextArg;
+    // while (thisArg)
+    // {
+    //     kernel_printf("%s\n", thisArg->argName);
+    //     thisArg = thisArg->nextArg;
+    // }
 }
 
 struct argumentNode* newArg(struct argumentNode* arg)
@@ -141,7 +146,8 @@ bool read_line(char* str, int length)
         if ('\n' == c)
         {
             // 确保字符串结尾是'\0'
-            str[index] = '\0';
+            str[index] = c;
+            str[index + 1] = 0;
             return true;
         }
         // 回退，删除一个字符，将其从数组中删除，也从屏幕上消失
