@@ -46,6 +46,7 @@ void parse_cmd(char* cmd)
 
     int len = kernel_strlen(cmd) + 1;
     // 扫描一遍字符串
+    // 看不懂两个月前写的代码系列
     while (cmd[cmdIndex] && cmdIndex < MAX_COMMAND_LENGTH)
     {
         // 正常字符
@@ -166,6 +167,9 @@ bool read_line(char* str, int length)
         if ('\n' == c)
         {
             // 确保字符串结尾是'\0'
+            // 在自己的电脑上测试不需要结尾的\n
+            // 但是在板子上测试必须加上\n
+            // 否则最后一个字符必须是空格，正常字符读不到
             str[index] = c;
             str[index + 1] = 0;
             return true;

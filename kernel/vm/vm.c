@@ -40,7 +40,7 @@ void test_tlb_refill(int val)
 	// }
 	// free_mm_struct(mm_current);
 	kernel_printf("<<<<<<< end test page fault\n");
-	// volatile int i = 0;
+	volatile int i = 0;
 }
 
 struct mm_struct *create_mm_struct(uint asid)

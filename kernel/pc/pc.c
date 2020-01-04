@@ -161,8 +161,7 @@ pid_t task_create(char* name, void(*entry)(unsigned int argc, void* argv), unsig
     return pid;
 }
 
-// 创建新进程，返回进程号
-// 若返回(pid_t)-1，则为创建失败
+// 用户进程的创建入口
 pid_t task_create_(pid_t pid, char* name, void* epc,
                         enum task_mode mode, struct mm_struct* mm)
 {
@@ -564,6 +563,9 @@ void waitpid(pid_t pid)
     task_list_add(&task_wait_list, &(current->node_shedule));
     current->status = INTERRUPTIBLE;
     
+    // 以下注释掉的代码记录了一个极其诡异的debug过程
+    // vm.c中有一个 volatile int i = 0
+    // test_tlb_refill函数做完了，必须加这么一句代码
     // int a = enable_interrupts();
     // kernel_printf("old %d\n", a);
     // asm volatile("mtc0 $zero, $9\n\t");
@@ -610,12 +612,17 @@ void clearup()
 // 加载用户程序使之成为进程
 void loadUserProgram(char* fileName)
 {
+    // 首先分配一个pid号
     pid_t pid = pid_alloc();
+    // 创建内存描述符
     struct mm_struct* mm = create_mm_struct(pid);
+    // 激活地址空间
     activateMemory(mm);
+    // 将外存上的文件映射到内存，获取PC值
     void* epc = mmap(fileName);
-
+    // 创建进程
     task_create_(pid, fileName, epc, USER, mm);
+    // 交调度器定于一尊
 }
 
 #pragma GCC pop_options
