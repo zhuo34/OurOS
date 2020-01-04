@@ -161,6 +161,51 @@ pid_t task_create(char* name, void(*entry)(unsigned int argc, void* argv), unsig
     return pid;
 }
 
+// 创建新进程，返回进程号
+// 若返回(pid_t)-1，则为创建失败
+pid_t task_create_(pid_t pid, char* name, void* epc,
+                        enum task_mode mode, struct mm_struct* mm)
+{
+    if ((pid_t)-1 == pid)
+    {
+        return pid;
+    }
+    union task_union* task_new = (union task_union*)kmalloc(sizeof(union task_union));
+    struct task_struct* task_ptr = (struct task_struct*)task_new;
+    
+    task_ptr->pid = pid;
+    task_ptr->parent = current->pid;
+    // task_ptr->asid = pid;
+    task_ptr->status = PREPARING;
+    kernel_strcpy(task_ptr->name, name);
+    
+    // 寄存器上下文信息清零
+    kernel_memset(&(task_ptr->context), 0, sizeof(struct regs_context));
+    // 程序计数器的值为程序首地址
+    task_ptr->context.epc = (unsigned int)epc;
+    // 内核栈顶
+    task_ptr->context.sp = (unsigned int)task_new + KERNEL_STACK_SIZE;
+    unsigned int gp;
+    asm volatile("la %0, _gp\n\t" : "=r"(gp));
+    task_ptr->context.gp = gp;
+    
+    // 信号位清零
+    task_ptr->signals = 0;
+   
+    task_ptr->mm = mm;
+    
+    // 文件系统
+    task_ptr->fs = (void*)0;
+    
+    task_list_add(&task_list, &(task_ptr->node));
+    task_list_add(&task_schedule_list, &(task_ptr->node_shedule));
+    // list_print(&task_list);
+    // 进入运行状态
+    task_ptr->status = RUNNING;
+    // list_print(&task_schedule_list);
+    return pid;
+}
+
 // 进程退出
 void task_exit()
 {
@@ -560,6 +605,17 @@ void clearup()
         task_list_delete(&(task_exit->node));
         kfree(task_exit);
     }
+}
+
+// 加载用户程序使之成为进程
+void loadUserProgram(char* fileName)
+{
+    pid_t pid = pid_alloc();
+    struct mm_struct* mm = create_mm_struct(pid);
+    activateMemory(mm);
+    void* epc = mmap(fileName);
+
+    task_create_(pid, fileName, epc, USER, mm);
 }
 
 #pragma GCC pop_options
