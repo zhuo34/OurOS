@@ -41,7 +41,6 @@ struct argumentNode* newArg(struct argumentNode* arg);
 
 void osh();
 void parse_cmd(char* cmd);
-void exec_cmd_pre(struct command* cmd);
 void exec_cmd(struct command* cmd);
 
 // 从标准输入获取一行

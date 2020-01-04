@@ -9,7 +9,7 @@ void osh()
     // 初始化
     char cmd[MAX_COMMAND_LENGTH];
     kernel_clear_screen();
-    // 原ZJUNIX怎么还PowerShell的，这Windows遗毒是有多深
+    // 原ZJUNIX怎么还PowerShell的
     kernel_puts("OurShell Starts!\n\n");
 
     print_prompt();
@@ -36,15 +36,17 @@ void parse_cmd(char* cmd)
 
     // 目前为单个命令，如果支持多条命令，也用链表
     struct command* thisCmd = (struct command*)kmalloc(sizeof(struct command));
+    kernel_memset(thisCmd->cmdName, 0, MAX_ARGUMENT_LENGTH);
     // 参数链表
     thisCmd->argList = (struct argumentNode*)kmalloc(sizeof(struct argumentNode));
     struct argumentNode* thisArg = thisCmd->argList;
     thisArg->nextArg = (void*)0;
     
-
     int cmdIndex = 0, argIndex = 0;
+
+    int len = kernel_strlen(cmd) + 1;
     // 扫描一遍字符串
-    while (cmd[cmdIndex] && cmdIndex < MAX_COMMAND_LENGTH)
+    while (len--)
     {
         // 正常字符
         if (' ' != cmd[cmdIndex] && '\0' != cmd[cmdIndex] && '\n' != cmd[cmdIndex])
@@ -108,24 +110,21 @@ void parse_cmd(char* cmd)
             }
         }
     }
-    exec_cmd_pre(thisCmd);
-}
-
-void exec_cmd_pre(struct command* cmd)
-{
-    
+    exec_cmd(thisCmd);
 }
 
 // 子进程执行命令
 void exec_cmd(struct command* cmd)
 {
-    
+    kernel_printf("%s\n", cmd->cmdName);
+
 }
 
 struct argumentNode* newArg(struct argumentNode* arg)
 {
     arg->nextArg = (struct argumentNode*)kmalloc(sizeof(struct argumentNode));
     struct argumentNode* thisArg = arg->nextArg;
+    kernel_memset(thisArg->argName, 0, MAX_ARGUMENT_LENGTH);
     thisArg->nextArg = (void*)0;
     return thisArg;
 }
