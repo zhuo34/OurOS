@@ -15,7 +15,7 @@ struct shm_struct {
 
 void init_shm_pool();
 
-int shmget(uint size);
+int shmget(int key, uint size);
 void shmat(int shmid, void *vaddr);
 
 #endif // OUROS_SHM_H
