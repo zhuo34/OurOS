@@ -1,8 +1,9 @@
 #ifndef OS_PC_H
 #define OS_PC_H
 
-#include <../arch/mips32/arch.h>
-#include <../arch/mips32/intr.h>
+#include <arch.h>
+#include <intr.h>
+#include <ouros/shm.h>
 #include <ouros/type.h>
 #include <ouros/utils.h>
 #include <tlb.h>
@@ -17,6 +18,7 @@
 #define KERNEL_STACK_SIZE 4096
 #define TASK_NAME_MAX 16
 #define PID_STATUS_SIZE 32
+#define SEM_MAX 16
 
 typedef unsigned int pid_t;
 
@@ -74,12 +76,21 @@ struct task_struct
 
 extern struct task_struct* current;
 
+// 进程描述符存储于内核栈的底部
 union task_union
 {
     struct task_struct task;
     unsigned char kernel_stack[KERNEL_STACK_SIZE];
 };
 
+// 信号量的结构
+struct semaphore
+{
+    int key;
+    int value;
+};
+
+// 暴漏给外部的函数
 void init_pc();
 pid_t task_create(char* name, void(*entry)(unsigned int argc, void* argv), unsigned int argc, void* argv, enum task_mode mode);
 void wakeup();
@@ -87,5 +98,8 @@ void sigHandler(enum signal sig, sig_handler handler);
 void kill(pid_t pid, enum signal sig);
 void waitpid(pid_t pid);
 void loadUserProgram(char* fileName);
+struct semaphore* getSem(int key, int value);
+void P(struct semaphore* sem);
+void V(struct semaphore* sem);
 
 #endif  // OS_PC_H

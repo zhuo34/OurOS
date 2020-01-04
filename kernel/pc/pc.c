@@ -48,6 +48,7 @@ unsigned char pid_status[PID_STATUS_SIZE];
 // 创建0号进程，初始化进程表
 void init_pc()
 {
+    init_shm_pool();
     // 初始化各链表
     task_list_init(&task_list);
     task_list_init(&task_wait_list);
@@ -374,33 +375,33 @@ void pc_schedule(unsigned int status, unsigned int cause, struct regs_context* p
         // kernel_printf("%x \n\n", *((uint*)(current->context.epc) + 1));
         // 上下文切换
         copy_context(pt_context, &(current->context));
-        kernel_printf("\nBefore activateMemory:\n");
-        kernel_printf("0x%x ", current->context.epc);
-        kernel_printf("%x ", *((uint*)(current->context.epc)));
-        kernel_printf("%x \n\n", *((uint*)(current->context.epc) + 1));
+        // kernel_printf("\nBefore activateMemory:\n");
+        // kernel_printf("0x%x ", current->context.epc);
+        // kernel_printf("%x ", *((uint*)(current->context.epc)));
+        // kernel_printf("%x \n\n", *((uint*)(current->context.epc) + 1));
         // 激活地址空间
         if (next->mm)
         {
             activateMemory(next->mm);
         }
-        if (current->pid == 0)
-        {
-            ((uint*)(current->context.epc))[0] = 0x3c08bfc0;
-            ((uint*)(current->context.epc))[1] = 0x35089008;
-            ((uint*)(current->context.epc))[2] = 0x3c09cafe;
-            ((uint*)(current->context.epc))[3] = 0x3529babe;
-            ((uint*)(current->context.epc))[4] = 0xad090000;
-            ((uint*)(current->context.epc))[5] = 0x00000000;
-            ((uint*)(current->context.epc))[6] = 0x00000000;
-        }
+        // if (current->pid == 0)
+        // {
+            // ((uint*)(current->context.epc))[0] = 0x3c08bfc0;
+            // ((uint*)(current->context.epc))[1] = 0x35089008;
+            // ((uint*)(current->context.epc))[2] = 0x3c09cafe;
+            // ((uint*)(current->context.epc))[3] = 0x3529babe;
+            // ((uint*)(current->context.epc))[4] = 0xad090000;
+            // ((uint*)(current->context.epc))[5] = 0x00000000;
+            // ((uint*)(current->context.epc))[6] = 0x00000000;
+        // }
         current = next;
         copy_context(&(current->context), pt_context);
-        kernel_printf("After switch_ex:\n");
-        kernel_printf("0x%x ", current->context.epc);
-        kernel_printf("%x ", *((uint*)(current->context.epc)));
-        kernel_printf("%x \n\n", *((uint*)(current->context.epc) + 1));
-        if (current->pid == 0)
-            disable_interrupts();
+        // kernel_printf("After switch_ex:\n");
+        // kernel_printf("0x%x ", current->context.epc);
+        // kernel_printf("%x ", *((uint*)(current->context.epc)));
+        // kernel_printf("%x \n\n", *((uint*)(current->context.epc) + 1));
+        // if (current->pid == 0)
+            // disable_interrupts();
         // while (1);
     }
     }
@@ -648,7 +649,8 @@ void clearup()
     }
 }
 
-// 加载用户程序使之成为进程
+// 加载用户程序使之成为进程，迷之bug
+// CPU的10号异常
 void loadUserProgram(char* fileName)
 {
     int old = disable_interrupts();
@@ -669,6 +671,50 @@ void loadUserProgram(char* fileName)
     if (old)
         enable_interrupts();
     asm volatile("mtc0 $zero, $9\n\t");
+}
+
+// 进程同步之信号量
+struct semaphore sem[SEM_MAX] = {0};
+
+// 进程获取信号量
+struct semaphore* getSem(int key, int value)
+{
+    for (int i = 0; i < SEM_MAX; ++i)
+    {
+        if (sem[i].key == key)
+        {
+            sem[i].value = value;
+            return &(sem[i]);
+        }
+    }
+    for (int i = 0; i < SEM_MAX; ++i)
+    {
+        if (sem[i].key == 0)
+        {
+            return &(sem[i]);
+        }
+    }
+}
+
+// 进程获取资源
+void P(struct semaphore* sem)
+{
+    if (sem->value > 0)
+    {
+        --(sem->value);
+    }
+    // 阻塞
+    else
+    {
+        while (sem->value) ;
+        --(sem->value);
+    }
+}
+
+// 进程释放资源
+void V(struct semaphore* sem)
+{
+    ++(sem->value);
 }
 
 #pragma GCC pop_options

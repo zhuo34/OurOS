@@ -1,6 +1,8 @@
 #ifndef OUROS_SHM_H
 #define OUROS_SHM_H
 
+#include <ouros/type.h>
+
 #define MAX_SHM_NUM 8
 
 struct shm_struct {

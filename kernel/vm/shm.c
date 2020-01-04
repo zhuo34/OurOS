@@ -22,7 +22,7 @@ int shmget(int key, uint size)
 			return -1;
 		struct shm_struct *shm = (struct shm_struct *)kmalloc(sizeof(struct shm_struct));
 		shm->pfn_start = get_pgn(get_page_by_paddr(paddr));
-		shm->pfn_start = upper_align(size, 1 << PAGE_SHIFT) >> PAGE_SHIFT;
+		shm->pfn_num = upper_align(size, 1 << PAGE_SHIFT) >> PAGE_SHIFT;
 		shm_pool[key] = shm;
 	}
 	return key;
@@ -34,10 +34,11 @@ void shmat(int shmid, void *vaddr)
 		return;
 	void *p = (void *)lower_align((uint)vaddr, 1 << PAGE_SHIFT);
 	for (int i = 0; i < shm_pool[shmid]->pfn_num; i++) {
-		get_pte(mm_current->pgd, p)->tlb_entry.reg.PFN = shm_pool[shmid]->pfn_start + i;
-		get_pte(mm_current->pgd, p)->tlb_entry.reg.G = 0;
-		get_pte(mm_current->pgd, p)->tlb_entry.reg.D = 1;
-		get_pte(mm_current->pgd, p)->tlb_entry.reg.V = 1;
+		pte_t *pte = get_pte(mm_current->pgd, p);
+		pte->tlb_entry.reg.PFN = shm_pool[shmid]->pfn_start + i;
+		pte->tlb_entry.reg.G = 0;
+		pte->tlb_entry.reg.D = 1;
+		pte->tlb_entry.reg.V = 1;
 		p += i * PAGE_SIZE;
 	}
 }

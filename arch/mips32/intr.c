@@ -57,7 +57,7 @@ void do_interrupts(unsigned int status, unsigned int cause, context* sp) {
         }
         index >>= 1;
     }
-    kernel_printf("EPC in do_interrupts: %x\n", sp->epc);
+    // kernel_printf("EPC in do_interrupts: %x\n", sp->epc);
 }
 
 void register_interrupt_handler(int index, intr_fn fn) {
