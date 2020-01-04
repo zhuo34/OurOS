@@ -9,6 +9,7 @@
 exc_fn exceptions[32];
 
 void do_exceptions(unsigned int status, unsigned int cause, context* pt_context) {
+    disable_interrupts();
     int index = cause >> 2;
     index &= 0x1f;
     uint badvaddr, pgd;
@@ -17,7 +18,7 @@ void do_exceptions(unsigned int status, unsigned int cause, context* pt_context)
 	// 	: "=r" (badvaddr)
 	// );
     // kernel_printf("BadVAddr: %x\n", badvaddr);
-    kernel_printf("exceptions[%d] %x\n", index, exceptions[index]);
+    // kernel_printf("exceptions[%d] %x\n", index, exceptions[index]);
     if (exceptions[index]) {
         exceptions[index](status, cause, pt_context);
     } else {
@@ -29,13 +30,14 @@ void do_exceptions(unsigned int status, unsigned int cause, context* pt_context)
         while (1)
             ;
     }
+    enable_interrupts();
 }
 
 void register_exception_handler(int index, exc_fn fn) {
     index &= 31;
-    kernel_printf("register exeception %d, %x\n", index, fn);
+    // kernel_printf("register exeception %d, %x\n", index, fn);
     exceptions[index] = fn;
-    kernel_printf("exceptions[%d] %x\n", index, exceptions[index]);
+    // kernel_printf("exceptions[%d] %x\n", index, exceptions[index]);
 }
 
 void init_exception() {

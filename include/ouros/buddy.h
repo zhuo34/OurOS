@@ -2,7 +2,7 @@
 #define OUROS_BUDDY_H
 
 #include <ouros/mm.h>
-#include <ouros/list.h>
+#include <linux/list.h>
 
 enum buddy_page_info {
 	BUDDY_FREE, BUDDY_SLAB, BUDDY_ALLOCED, BUDDY_RESERVED

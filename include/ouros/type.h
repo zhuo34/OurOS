@@ -24,4 +24,6 @@ typedef enum {
     false, true
 } bool;
 
+typedef struct regs_context context;
+
 #endif // OUROS_TYPE_H

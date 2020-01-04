@@ -2,6 +2,7 @@
 #include "pageswap.h"
 
 #include <tlb.h>
+#include <ouros/pc.h>
 #include <ouros/mm.h>
 #include <ouros/utils.h>
 #include <ouros/buddy.h>
@@ -13,52 +14,41 @@
 struct mm_struct *mm_current;
 // int debug = 0;
 
-void test_tlb_refill()
+void test_tlb_refill(int val)
 {
 	init_page_pool();
-	kernel_printf("start test page fault\n");
+	kernel_printf(">>>>>>> start test page fault\n");
 	
-	mm_current = create_mm_struct();	
-	kernel_printf("mm_current created.\n");
-	while (1);
-	// uint *test_vaddr = (uint *)0x08000000;
-	// uint *test_vaddr1 = (uint *)0x08004000;
-	// uint *test_vaddr2 = (uint *)0x08008000;
-	// uint *test_vaddr3 = (uint *)0x0800C000;
+	// mm_current = create_mm_struct(asid);
+
 	int *test_vaddrs[4];
 
 	for (int i = 0; i < 4; i++) {
 		test_vaddrs[i] = (int *)(0x08000000 + 0x00004000 * i);
 		kernel_printf("access %x\n", test_vaddrs[i]);
-		int a = 5555 + i;
-		
+		int a = val + i;
 		*(test_vaddrs[i]) = a;
 		kernel_printf("test %d\n", *(test_vaddrs[i]));
-		// while (1);
-		// if (i == 2) {
-		// 	while (1);
-		// }
 	}
-	while (1);
-	// debug = 1;
-	kernel_printf("access %x\n", test_vaddrs[0]);
-	kernel_printf("test %d\n", *(test_vaddrs[0]));
-	kernel_printf("end test page fault\n");
-	while (1);
+	// for (int i = 0; i < 1; i++) {
+	// 	int * addr = (int *)0x08000000; 
+	// 	kernel_printf(">>>>> access %x\n", addr);
+	// 	int a = *(addr);
+	// 	kernel_printf("test %d\n", a);
+	// 	kernel_printf("<<<<< access %x end\n", addr);
+	// }
+	// free_mm_struct(mm_current);
+	kernel_printf("<<<<<<< end test page fault\n");
+	// volatile int i = 0;
 }
 
-struct mm_struct *create_mm_struct()
+struct mm_struct *create_mm_struct(uint asid)
 {
-	kernel_printf("alloc mm\n");
 	struct mm_struct *mm = (struct mm_struct *)kmalloc(sizeof(struct mm_struct));
-	kernel_printf("mm: %x\n", mm);
-	while (1);
-	kernel_printf("alloc pgd\n");
 	mm->pgd = create_pt();
-	kernel_printf("pgd: %x\n", mm->pgd);
-	kernel_printf("pgd: %x\n", mm->pgd);
-	while (1);
 	mm->pf_num = 0;
+	mm->asid = asid;
+	// mm->count = 1;
 	INIT_LIST_HEAD(&mm->fifo);
 	return mm;
 }
@@ -66,26 +56,18 @@ struct mm_struct *create_mm_struct()
 pgd_t *create_pt()
 {
 	pgd_t *ret = (pgd_t *)kmalloc(sizeof(pgd_t) * PGD_NUM);
-	for (int i = 0; i < PGD_NUM; i++) {
-		ret[i] = (pte_t *)kmalloc(sizeof(pte_t) * PTE_NUM);
-	}
+	kernel_memset(ret, 0, sizeof(pgd_t) * PGD_NUM);
 	return ret;
-}
-
-void init_pt(pgd_t *pgd)
-{
-	for (int i = 0; i < PGD_NUM; i++) {
-		for (int j = 0; j < PTE_NUM; j++) {
-			pgd[i][j].tlb_entry.value = 0;
-			pgd[i][j].info = 0;
-		}
-	}
 }
 
 pte_t *get_pte(pgd_t *pgd, void *vaddr)
 {
 	uint addr = (uint) vaddr;
 	uint pgd_idx = addr >> 22;
+	if (!pgd[pgd_idx]) {
+		pgd[pgd_idx] = (pte_t *)kmalloc(sizeof(pte_t) * PTE_NUM);
+		kernel_memset(pgd[pgd_idx], 0, sizeof(pte_t) * PTE_NUM);
+	}
 	uint pte_idx = (addr << 10) >> 22;
 	return &(pgd[pgd_idx][pte_idx]);
 }
@@ -112,8 +94,8 @@ int find_vma(struct mm_struct *mm, void *vaddr)
 
 void do_pagefault(void *vaddr)
 {
-	kernel_printf("do pagefault\n");
-	// if (debug) while (1);
+	// kernel_printf("do pagefault\n");
+	// kernel_printf("addr %x\n", vaddr);
 	int vma = find_vma(mm_current, vaddr);
 	if (vma) {
 		pte_t *pte = get_pte(mm_current->pgd, vaddr);
@@ -135,7 +117,7 @@ void do_pagefault(void *vaddr)
 				 * 3. pfn_num of this process increament
 				 */
 				struct page *pagep = get_page_by_paddr(paddr);
-				kernel_printf("alloc phy addr: %x\n", paddr);
+				// kernel_printf("alloc phy addr: %x\n", paddr);
 				// while (1);
 				pagep->virtual = vaddr;
 				list_add_tail(&pagep->list, &mm_current->fifo);
@@ -161,19 +143,19 @@ void do_pagefault(void *vaddr)
 		 * TODO: kill the process
 		 */
 	}
+	// kernel_printf("end page fault.\n");
 }
 
 void *swap_one_page(struct mm_struct *mm, void *vaddr)
 {
 	struct page *pagep = list_first_entry(&mm->fifo, struct page, list);
 	void *vaddr_out = pagep->virtual;
-	kernel_printf("swap out vaddr_out %x\n", vaddr_out);
 	pte_t *pte = get_pte(mm->pgd, vaddr_out);
 	void *paddr = (void *) (pte->tlb_entry.reg.PFN << PAGE_SHIFT);
-	kernel_printf("swap out paddr %x\n", paddr);
+	// kernel_printf("swap out paddr %x\n", paddr);
 
-	kernel_printf("new block num: %d\n", write_page_to_disk(vaddr_out, pte->info));
-	// if (debug) while (1);
+	// kernel_printf("new block num: %d\n", write_page_to_disk(vaddr_out, pte->info));
+	write_page_to_disk(vaddr_out, pte->info);
 	load_page_from_disk(vaddr_out, get_pte(mm->pgd, vaddr)->info);
 	/**
 	 * 1. tlb reset
@@ -183,25 +165,47 @@ void *swap_one_page(struct mm_struct *mm, void *vaddr)
 	 * So put 'delete' at last in case:
 	 * another tlb miss is triggered in 'write_page_to_disk' before,
 	 * due to the victim page virtual address is not in tlb.
-	*/
+	 */
 	pte->tlb_entry.reg.V = 0;
-	tlb_reset(vaddr_out);
+	tlb_reset(mm, vaddr_out);
 	// while (1);
 
 	pagep->virtual = vaddr;
 	list_del(&pagep->list);
+	list_add_tail(&pagep->list, &mm->fifo);
 	return paddr;
 }
 
-u32 get_entry_hi(void *vaddr)
+u32 get_entry_hi(void *vaddr, uint asid)
 {
 	union EntryHi entry_hi;
 	entry_hi.value = 0;
 	entry_hi.reg.VPN2 = (uint)vaddr >> 13;
-	/**
-	 * TODO: set entry_hi 's ASID field
-	 */
+	entry_hi.reg.ASID = asid;
 	return entry_hi.value;
+}
+
+void free_mm_struct(struct mm_struct *mm)
+{
+	struct list_head *p = mm->fifo.next;
+	while (p != &mm->fifo) {
+		struct list_head *next = p->next;
+		struct page *pagep = list_entry(p, struct page, list);
+		get_pte(mm->pgd, pagep->virtual)->tlb_entry.reg.V = 0;
+		tlb_reset(mm, pagep->virtual);
+		// kernel_printf("free phy addr: %x\n", get_page_paddr(pagep));
+		list_del(p);
+		free_pages(get_page_paddr(pagep));
+		p = next;
+	}
+
+	for (int i = 0; i < PGD_NUM; i++) {
+		if (mm->pgd[i]) {
+			kfree(mm->pgd[i]);
+		}
+	}
+	kfree(mm->pgd);
+	kfree(mm);
 }
 
 #pragma GCC pop_options

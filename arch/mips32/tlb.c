@@ -1,6 +1,7 @@
 #include "tlb.h"
 #include "arch.h"
 #include "exc.h"
+#include "intr.h"
 
 #include <ouros/utils.h>
 #include <driver/vga.h>
@@ -21,6 +22,7 @@ void init_tlb() {
 		"li $t1, 0x2000\n\t"
 
 		"move $v0, $zero\n\t"
+		"move $t7, $zero\n\t"
 		"li $v1, 32\n"
 
 		"init_tlb_L1:\n\t"
@@ -30,7 +32,6 @@ void init_tlb() {
 		"addi $v0, $v0, 1\n\t"
 		"ehb\n\t"
 		"tlbwi\n\t"
-		"nop\n\t"
 		"bne $v0, $v1, init_tlb_L1\n\t"
 		"nop"
 	);
@@ -38,7 +39,7 @@ void init_tlb() {
 	register_exception_handler(3, tlb_write_handler);
 }
 
-void read_tlb()
+void print_tlb()
 {
 	for (int i = 0; i < 32; i++) {
 		uint lo0, lo1, hi;
@@ -61,7 +62,7 @@ void read_tlb()
 	}
 }
 
-void read_tlb_index(uint index)
+void print_tlb_index(uint index)
 {
 	uint lo0, lo1, hi;
 	asm volatile(
@@ -79,7 +80,9 @@ void read_tlb_index(uint index)
 
 void tlb_refill()
 {
+	disable_interrupts();
 	__tlb_refill(true);
+	enable_interrupts();
 }
 
 void __tlb_refill(bool random)
@@ -90,9 +93,6 @@ void __tlb_refill(bool random)
 		"mfc0 %0, $8\n\t"			// load BadVAddr
 		: "=r"(bad_vaddr)
 	);
-	kernel_printf("bad_vaddr: %x\n", bad_vaddr);
-	kernel_printf("bad_vaddr: %x\n", bad_vaddr);
-	while (1);
 
 	pte = get_pte(mm_current->pgd, (void *)bad_vaddr);
 
@@ -103,9 +103,7 @@ void __tlb_refill(bool random)
 		entrylo0 = get_pte_tlb_entry(pte - 1);
 		entrylo1 = get_pte_tlb_entry(pte);
 	}
-	// kernel_printf("valid: %d\n", pte_is_valid(pte));
-	// kernel_printf("%x, %x\n", entrylo0, entrylo1);
-	// while (1);
+
 	if (pte_is_valid(pte)) {
 		// 1. if this entry is valid, refill tlb
 		asm volatile(
@@ -132,6 +130,7 @@ void __tlb_refill(bool random)
 
 void tlb_read_handler(unsigned int status, unsigned int cause, context* context)
 {
+	context->epc -= 4;
 	uint index;
 	asm volatile(
 		"tlbp\n\t"
@@ -150,6 +149,7 @@ void tlb_read_handler(unsigned int status, unsigned int cause, context* context)
 
 void tlb_write_handler(unsigned int status, unsigned int cause, context* context)
 {
+	context->epc -= 4;
 	uint index;
 	asm volatile(
 		"tlbp\n\t"
@@ -166,9 +166,9 @@ void tlb_write_handler(unsigned int status, unsigned int cause, context* context
 	}
 }
 
-void tlb_reset(void *vaddr)
+void tlb_reset(struct mm_struct *mm, void *vaddr)
 {
-	uint entry_hi = get_entry_hi(vaddr);
+	uint entry_hi = get_entry_hi(vaddr, mm->asid);
 	asm volatile(
 		"mtc0 %0, $10\n\t"			// write EntryHi
 		"ehb\n\t"					// CP0 hazard
@@ -183,29 +183,35 @@ void tlb_reset(void *vaddr)
 	);
 
 	if (index >> 31) {
-		/*
-		* No tlb entry for this address
-		*/
+		/**
+		 * No tlb entry for this address
+		 */
 		return;
 	}
 
-	uint entrylo0, entrylo1;
-	pte_t *pte = get_pte(mm_current->pgd, vaddr);
+	asm volatile(
+		"tlbr\n\t"
+	);
+
+	pte_t *pte = get_pte(mm->pgd, vaddr);
+	uint entrylo = get_pte_tlb_entry(pte);
 
 	if (!addr_bind_to_lo1(vaddr)) {
-		entrylo0 = get_pte_tlb_entry(pte);
-		entrylo1 = get_pte_tlb_entry(pte + 1);
+		asm volatile(
+			"mtc0 %0, $2\n\t"			// write EntryLo0
+			:
+			: "r"(entrylo)
+		);
 	} else {
-		entrylo0 = get_pte_tlb_entry(pte - 1);
-		entrylo1 = get_pte_tlb_entry(pte);
+		asm volatile(
+			"mtc0 %0, $3\n\t"			// write EntryLo1
+			:
+			: "r"(entrylo)
+		);
 	}
 	asm volatile(
-		"mtc0 %0, $2\n\t"			// write EntryLo0
-		"mtc0 %1, $3\n\t"			// write EntryLo1
 		"ehb\n\t"					// CP0 hazard
 		"tlbwi\n\t"
-		:
-		: "r"(entrylo0), "r"(entrylo1)
 	);
 }
 

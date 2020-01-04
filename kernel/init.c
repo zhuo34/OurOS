@@ -22,7 +22,8 @@
 
 #include "../usr/ps.h"
 #include "../usr/shell.h"
-
+#pragma GCC push_options
+#pragma GCC optimize("O0")
 void machine_info() {
     int row;
     int col;
@@ -34,6 +35,134 @@ void machine_info() {
     cursor.row = row;
     cursor.col = col;
     kernel_set_cursor();
+}
+
+void test3()
+{
+    kernel_printf("testSIG\n");
+}
+
+void test1926()
+{
+    kernel_printf("test1926\n");
+    test_tlb_refill(19);
+    // kill(current->parent, SIGWAIT);
+    // for (int i = 0 ; i < 1000; ++i)
+    // {
+    //     if (!(i % 100))
+    //         kernel_printf("%d\n", i);
+    // }
+    // kill(current->parent, SIGCHILD);
+    // test_tlb_refill(1999);
+    while (1)
+    {
+        kernel_printf("test1926\n");
+    }
+    
+    // while (1);
+
+    // test_tlb_refill();
+}
+
+void test2()
+{
+    kernel_printf("test6\n");
+    
+    test_tlb_refill(1926);
+    // int x, y;
+    // asm volatile(
+    //     "mfc0 %1, $11\n\t"
+    //     "mfc0 %0, $9\n\t"
+    //     :"=r"(x), "=r"(y));
+    // kernel_printf("%d %d\n", x, y);
+    kill(current->parent, SIGCHILD);
+    kernel_printf("test7\n");
+    // pid_t pid2 = task_create("test", test1926, 0, (void*)0, USER);
+    // kill(current->parent, SIGWAIT);
+    // for (int i = 0 ; i < 1000; ++i)
+    // {
+    //     if (!(i % 100))
+    //         kernel_printf("%d\n", i);
+    // }
+    // kill(current->parent, SIGCHILD);
+    // test_tlb_refill(1999);
+    while (1)
+    {
+        // kernel_printf("test6\n");
+    }
+    
+    // while (1);
+
+    // test_tlb_refill();
+}
+void test5()
+{
+    kernel_printf("test8\n");
+}
+void test1()
+{
+    kernel_printf("test\n");
+    // sigHandler(SIGRESERVE, test3);
+    // test_tlb_refill(5575);
+    
+    // for (int i = 0 ; i < 1000; ++i)
+    // {
+    //     if (!(i % 100))
+    //         kernel_printf("%d\n", i);
+    // }
+    test_tlb_refill(5555);
+    // test_tlb_refill(1000);
+    
+    // kernel_printf("qiguai\n");
+    // 什么鬼？
+    // int x, y;
+    // asm volatile(
+    //     "mfc0 %1, $11\n\t"
+    //     "mfc0 %0, $9\n\t"
+    //     :"=r"(x), "=r"(y));
+    // kernel_printf("%d %d\n", x, y);
+    
+    
+    // for (int i = 0; i < 1000; ++i)
+    // {
+    //     // if (!(i % 200))
+    //     //     kernel_printf("%d\n", i);
+    // }
+    // asm volatile(
+    //     "mfc0 %1, $11\n\t"
+    //     "mfc0 %0, $9\n\t"
+    //     :"=r"(x), "=r"(y));
+    // kernel_printf("%d %d\n", x, y);
+    pid_t pid2 = task_create("test", test2, 0, (void*)0, USER);
+    waitpid(pid2);
+    int *test_vaddrs[4];
+
+	for (int i = 0; i < 4; i++) {
+		test_vaddrs[i] = (int *)(0x08000000 + 0x00004000 * i);
+		kernel_printf("access %x\n", test_vaddrs[i]);
+		// int a = val + i;
+		// *(test_vaddrs[i]) = a;
+		kernel_printf("test %d\n", *(test_vaddrs[i]));
+	}
+    // waitpid();
+    // pid_t pid3 = task_create("test", test5, 0, (void*)0, USER);
+    while(1)
+    {
+        // kernel_printf("test\n");
+    }
+    // while (1);
+
+    
+    // while (1)
+}
+
+void test()
+{
+    pid_t pid = task_create("test", test1, 0, (void*)0, USER);
+    
+    
+    // kernel_printf("%d\n", pid);
+    // while (1);
 }
 
 void init_kernel() {
@@ -57,6 +186,8 @@ void init_kernel() {
     init_slab();
     log(LOG_OK, "Slab.");
     log(LOG_END, "Memory Modules.");
+    // test_tlb_refill();
+    // while (1);
 
     // File system
     log(LOG_START, "File System.");
@@ -68,18 +199,16 @@ void init_kernel() {
     // init_syscall();
     // log(LOG_END, "System Calls.");
 
-    // // Process control
-    // log(LOG_START, "Process Control Module.");
-    // init_pc();
-    // log(LOG_END, "Process Control Module.");
-    // // Interrupts
+    // Process control
+    log(LOG_START, "Process Control Module.");
+    init_pc();
+    log(LOG_END, "Process Control Module.");
+    // Interrupts
     // log(LOG_START, "Enable Interrupts.");
     // init_interrupts();
     // log(LOG_END, "Enable Interrupts.");
     // Init finished
-    machine_info();
-    *GPIO_SEG = 0x11223344;
-
+    // machine_info();
     // // System call
     // log(LOG_START, "System Calls.");
     // init_syscall();
@@ -89,14 +218,17 @@ void init_kernel() {
     // log(LOG_START, "Process Control Module.");
     // init_pc();
     // log(LOG_END, "Process Control Module.");
-    // // Interrupts
-    // log(LOG_START, "Enable Interrupts.");
-    // init_interrupts();
-    // log(LOG_END, "Enable Interrupts.");
+    // Interrupts
+    log(LOG_START, "Enable Interrupts.");
+    init_interrupts();
+    log(LOG_END, "Enable Interrupts.");
     // // Init finished
     // machine_info();
-    // *GPIO_SEG = 0x11223344;
-
-    ps();
+    *GPIO_SEG = 0x11223344;
+    // test();
+    // ps();
     // osh();
+    // while (1);
+    osh();
 }
+#pragma GCC pop_options

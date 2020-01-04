@@ -1,5 +1,5 @@
-#ifndef OUROS_LIST_H
-#define OUROS_LIST_H
+#ifndef LINUX_LIST_H
+#define LINUX_LIST_H
 
 #include <ouros/type.h>
 #include <ouros/utils.h>
@@ -162,4 +162,4 @@ static inline void list_sort(struct list_head *head,
 	}
 }
 
-#endif // OUROS_LIST_H
+#endif // LINUX_LIST_H

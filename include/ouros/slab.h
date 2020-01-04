@@ -2,7 +2,7 @@
 #define OUROS_SLAB_H
 
 #include <ouros/mm.h>
-#include <ouros/list.h>
+#include <linux/list.h>
 
 #define SLAB_ALIGN 4
 #define KMEM_CACHE_NUM 12

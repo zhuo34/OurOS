@@ -2,6 +2,7 @@
 #include "buddy.h"
 
 #include <driver/vga.h>
+#include <intr.h>
 
 #pragma GCC push_options
 #pragma GCC optimize("O0")
@@ -144,6 +145,7 @@ void kmem_cache_free_page(struct kmem_cache *cachep, void *pagevp)
 
 void *kmalloc(uint size)
 {
+	disable_interrupts();
 	void *ret = nullptr;
 	
 	if (size <= kmem_cache_size[KMEM_CACHE_NUM-1]) {
@@ -161,19 +163,21 @@ void *kmalloc(uint size)
 	}
 	// kernel_printf("kmalloc %x\n", ret);
 	// while (1);
-
+	enable_interrupts();
 	return ret;
 }
 
 void kfree(void *objp)
 {
+	disable_interrupts();
 	struct slab_head *slabp = (struct slab_head *)lower_align((uint)objp, PAGE_SIZE);
 	struct page *pagep = get_page_by_slab(slabp);
 	if (pagep->used_info == BUDDY_SLAB) {
 		kmem_cache_free(pagep->cachep, objp);
 	} else {
-		free_pages(objp);
+		free_pages(get_kernel_paddr(objp));
 	}
+	enable_interrupts();
 }
 
 void print_slab_info()

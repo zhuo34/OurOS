@@ -1,8 +1,6 @@
 #ifndef SHELL_H
 #define SHELL_H
 
-// 单元测试时只包含test.h
-#include "our_string.h"
 #include "terminal.h"
 #include <driver/ps2.h>
 #include <driver/sd.h>
@@ -46,9 +44,7 @@ void parse_cmd(char* cmd);
 void exec_cmd_pre(struct command* cmd);
 void exec_cmd(struct command* cmd);
 
-// unimplement methods
-int kernel_fork();
-void kernel_exit(int code);
-void* kernel_malloc(uint size);
+// 从标准输入获取一行
+bool read_line(char* str, int length);
 
 #endif // PS_H

@@ -2,7 +2,7 @@
 #define _OUROS_FS_H_
 
 #include <ouros/type.h>
-#include <ouros/list.h>
+#include <linux/list.h>
 
 #define HOME_PATH 						"/home"
 

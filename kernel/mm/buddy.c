@@ -88,7 +88,7 @@ void __free_pages(struct buddy_zone *mm, struct page *page)
 void free_pages(void *addr)
 {
 	if (!get_low_bits((uint)addr, 12)) {
-		__free_pages(&buddy_mm, get_page_by_paddr(get_kernel_paddr(addr)));
+		__free_pages(&buddy_mm, get_page_by_paddr(addr));
 	} else {
 		kernel_printf("Buddy free invalid address!\n");
 	}

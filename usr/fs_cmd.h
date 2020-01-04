@@ -1,7 +1,7 @@
 #ifndef _FS_CMD_H_
 #define _FS_CMD_H_
 
-#include <ouros/list.h>
+#include <linux/list.h>
 
 #define PWD_BUF_SIZE			500
 #define DEC_AND_PUT(str, c) 	( (*--(str)) = (c) )
