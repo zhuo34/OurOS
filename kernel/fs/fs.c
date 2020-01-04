@@ -50,7 +50,7 @@ void init_fs()
 	// 预读取根目录并创建对应的文件夹
 	pwd_dentry = root_dentry;
 	mkdir("/home");
-	mkdir("/mnt");
+	// mkdir("/mnt");
 
 	// 挂载其他分区的文件系统
 	char name[] = "/mnt/fs0";

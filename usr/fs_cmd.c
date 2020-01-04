@@ -18,6 +18,9 @@ void ls(const char *dirname)
 	// 打开目标文件
 	if(!dirname || *dirname == '\0')
 		dirname = pwd_path;
+	if(kernel_strcmp(dirname, "~") == 0)
+		dirname = HOME_PATH;
+		
 	file *dir = fs_open(dirname, F_MODE_READ);
 	if(IS_ERR_PTR(dir)) {
 		print_error_info(PTR_ERR(dir), dirname);
@@ -49,7 +52,7 @@ void ls(const char *dirname)
 void cd(const char *dirname)
 {
 	// 打开目标文件
-	if(!dirname || *dirname == '\0')
+	if(!dirname || *dirname == '\0' || kernel_strcmp(dirname, "~") == 0)
 		dirname = HOME_PATH;
 	
 	// 更新dentry

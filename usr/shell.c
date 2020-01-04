@@ -116,13 +116,23 @@ void parse_cmd(char* cmd)
 // 子进程执行命令
 void exec_cmd(struct command* cmd)
 {
-    // kernel_printf("%s\n", cmd->cmdName);
-    // struct argumentNode* thisArg = cmd->argList->nextArg;
-    // while (thisArg)
-    // {
-    //     kernel_printf("%s\n", thisArg->argName);
-    //     thisArg = thisArg->nextArg;
-    // }
+    if(kernel_strcmp(cmd->cmdName, "pwd") == 0) {
+        pwd();
+    } else if (kernel_strcmp(cmd->cmdName, "ls") == 0) {
+        char* name = cmd->argList->nextArg? cmd->argList->nextArg->argName: nullptr;
+        ls(name);
+    } else if (kernel_strcmp(cmd->cmdName, "cd") == 0) {
+        char* name = cmd->argList->nextArg? cmd->argList->nextArg->argName: nullptr;
+        cd(name);
+    } else if (kernel_strcmp(cmd->cmdName, "cat") == 0) {
+        if(!cmd->argList->nextArg) {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        cat(cmd->argList->nextArg->argName);
+    } else {
+        kernel_printf("%s: unknown command. \n", cmd->cmdName);
+    }
 }
 
 struct argumentNode* newArg(struct argumentNode* arg)
