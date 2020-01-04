@@ -94,7 +94,7 @@ void free_pages(void *addr)
 	}
 }
 
-struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel)
+struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel, int type)
 {
 	struct page *ret = nullptr;
 	if (bplevel > MAX_BUDDY_ORDER) {
@@ -124,7 +124,7 @@ struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel)
 		}
 		struct page *page_alloc = get_page_by_pgn(free_pgn);
 		page_alloc->bplevel = bplevel;
-		page_alloc->used_info = BUDDY_ALLOCED;
+		page_alloc->used_info = type;
 		page_alloc->virtual = nullptr;
 		page_alloc->cachep = nullptr;
 		ret = page_alloc;
@@ -145,7 +145,7 @@ void *alloc_pages(uint size)
 		n *= 2;
 		bplevel++;
 	}
-	struct page *pagep = __alloc_pages(&buddy_mm, bplevel);
+	struct page *pagep = __alloc_pages(&buddy_mm, bplevel, BUDDY_ALLOCED);
 	void *ret = nullptr;
 	if (pagep) {
 		ret = get_page_paddr(pagep);

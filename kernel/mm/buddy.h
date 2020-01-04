@@ -11,7 +11,7 @@
 
 bool page_is_in_freelist(struct buddy_zone *mm, struct page *page);
 
-struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel);
+struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel, int type);
 void __free_pages(struct buddy_zone *mm, struct page *page);
 
 void print_freelist_info();

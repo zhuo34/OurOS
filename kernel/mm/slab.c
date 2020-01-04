@@ -81,7 +81,7 @@ void *kmem_cache_alloc(struct kmem_cache *cachep)
 		} else if (!list_empty(&cachep->node.free)) {
 			pagep = list_first_entry(&cachep->node.free, struct page, list);
 		} else {
-			pagep = __alloc_pages(&buddy_mm, 0);
+			pagep = __alloc_pages(&buddy_mm, 0, BUDDY_SLAB);
 			if (!pagep) {
 				kernel_printf("No buddy page for slab!\n");
 				return ret;
