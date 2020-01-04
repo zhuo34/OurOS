@@ -52,7 +52,7 @@ struct task_struct
     pid_t pid;
     pid_t parent;
     // 进程asid号
-    unsigned int asid;
+    // unsigned int asid;
     //进程状态
     enum task_state status;
     //进程名

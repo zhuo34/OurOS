@@ -5,6 +5,9 @@
 // debug
 #include <driver/vga.h>
 
+#pragma GCC push_options
+#pragma GCC optimize("O0")
+
 pid_t task_create(char* name, void(*entry)(unsigned int argc, void* argv), unsigned int argc, void* argv, enum task_mode mode);
 pid_t pid_alloc();
 void pid_delete(pid_t pid);
@@ -18,12 +21,13 @@ void task_list_delete(struct task_list_node* node);
 void list_print(struct task_list_node* node);
 void list_print_reverse(struct task_list_node* node);
 void idle();
-void activateMemory(unsigned int asid, struct mm_struct* mm);
+void activateMemory(struct mm_struct* mm);
 void copy_context(context* src, context* dst);
 void wakeup();
 void kill(pid_t pid, enum signal sig);
 void sigHandler(enum signal sig, sig_handler handler);
 void waitpid(pid_t pid);
+void clearup();
 
 // 当前进程
 struct task_struct* current;
@@ -55,7 +59,7 @@ void init_pc()
     idle->pid = 0;
     idle->parent = 0;
     idle->status = PREPARING;
-    idle->asid = 0;
+    // idle->asid = 0;
     kernel_strcpy(idle->name, "idle");
     pid_status[0] = 1;
     idle->fs = (void*)0;
@@ -77,7 +81,7 @@ void init_pc()
 }
 
 // 激活地址空间
-void activateMemory(unsigned int asid, struct mm_struct* mm)
+void activateMemory(struct mm_struct* mm)
 {
     // init_tlb();
     asm volatile(
@@ -88,14 +92,18 @@ void activateMemory(unsigned int asid, struct mm_struct* mm)
         "or $t0, $t0, $t1\n\t"
         "mtc0 $t0, $10\n\t"
         :
-        :"r"(asid));
+        :"r"(mm->asid));
     mm_current = mm;
 }
 
 // 获取cp0的十号寄存器内容
 int getASID()
 {
-
+    int x;
+    asm volatile(
+        "mfc0 %0, $10\n\t"
+        :"=r"(x));
+    kernel_printf("%d %d\n", x);
 }
 
 // 创建新进程，返回进程号
@@ -113,7 +121,7 @@ pid_t task_create(char* name, void(*entry)(unsigned int argc, void* argv), unsig
     
     task_ptr->pid = pid;
     task_ptr->parent = current->pid;
-    task_ptr->asid = pid;
+    // task_ptr->asid = pid;
     task_ptr->status = PREPARING;
     kernel_strcpy(task_ptr->name, name);
     
@@ -139,7 +147,7 @@ pid_t task_create(char* name, void(*entry)(unsigned int argc, void* argv), unsig
     }
     else
     {
-        task_ptr->mm = create_mm_struct(task_ptr->asid);
+        task_ptr->mm = create_mm_struct(task_ptr->pid);
     }
     // 文件系统
     task_ptr->fs = (void*)0;
@@ -179,6 +187,7 @@ void task_exit()
     task_list_add(&task_exit_list, &(current->node));
     // 释放当前进程的pid
     pid_delete(current->pid);
+    
     // 控制权回到进程调度器
     struct task_struct* next = find_next_task();
     current = next;
@@ -194,6 +203,7 @@ void wakeup()
 // 进程调度
 void pc_schedule(unsigned int status, unsigned int cause, struct regs_context* pt_context)
 {
+    clearup();
     // kernel_printf("sche\n");
     if (current->status == RUNNING)
     {
@@ -301,7 +311,7 @@ void pc_schedule(unsigned int status, unsigned int cause, struct regs_context* p
         // 激活地址空间
         if (next->mm)
         {
-            activateMemory(next->asid, next->mm);
+            activateMemory(next->mm);
         }
         // 上下文切换
         copy_context(pt_context, &(current->context));
@@ -311,6 +321,8 @@ void pc_schedule(unsigned int status, unsigned int cause, struct regs_context* p
     }
     asm volatile("mtc0 $zero, $9\n\t");
 }
+
+
 
 // 遍历输出链表
 void list_print(struct task_list_node* node)
@@ -525,3 +537,29 @@ void waitpid(pid_t pid)
         // kernel_printf("%d %d\n", x, y);
     }
 }
+
+// 获取9号寄存器和11号寄存器的内容
+void getTimeCP0()
+{
+    int x, y;
+    asm volatile(
+        "mfc0 %1, $11\n\t"
+        "mfc0 %0, $9\n\t"
+        :"=r"(x), "=r"(y));
+    kernel_printf("%d %d\n", x, y);
+}
+
+// 清除进程退出链表
+void clearup()
+{
+    struct task_list_node* node = task_exit_list.next;
+    while (node != &task_exit_list)
+    {
+        struct task_struct* task_exit = container_of(node, struct task_struct, node_shedule);
+        task_list_delete(node);
+        task_list_delete(&(task_exit->node));
+        kfree(task_exit);
+    }
+}
+
+#pragma GCC pop_options
