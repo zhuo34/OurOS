@@ -36,7 +36,7 @@ static int sd_send_cmd_blocking(int cmd, int argument) {
 
 int sd_read_sector_blocking(int id, void* buffer) {
     // Disable interrupts
-    disable_interrupts();
+    int old = disable_interrupts();
     int result = 0;
 
     // Set dma_address
@@ -68,7 +68,8 @@ int sd_read_sector_blocking(int id, void* buffer) {
     }
 ret:
     // Enable interrupts
-    enable_interrupts();
+    if (old)
+        enable_interrupts();
     return result;
 }
 

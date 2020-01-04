@@ -11,6 +11,15 @@
 .set noat
 .align 2
 
+# test:
+# 	lui $t0, 0xbfc0
+# 	ori $t0, $t0, 0x9008
+# 	lui $t1, 0xcafe
+# 	ori $t1, 0xbabe
+# 	sw $t1, 0($t0)
+# 	j test
+# 	nop
+
 exception:
 	j		tlb_refill_save_context	# jump to tlb_refill_save_context
 	move 	$k1, $sp				# delay slot
@@ -153,7 +162,6 @@ exception_save_context:
 	mfc0	$a2, $14		# EPC
 	mfhi	$t3
 	mflo	$t4
-	addi	$a2, $a2, -4	# EPC -= 4
 	sw		$a2, 0($sp)		# EPC
 	sw		$t3, 104($sp)	# HI
 	sw		$t4, 108($sp)	# LO

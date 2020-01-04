@@ -20,7 +20,7 @@ void test_tlb_refill(int val)
 	init_page_pool();
 	kernel_printf(">>>>>>> start test page fault\n");
 	
-	// mm_current = create_mm_struct(asid);
+	mm_current = create_mm_struct(0);
 
 	int *test_vaddrs[4];
 
@@ -31,16 +31,16 @@ void test_tlb_refill(int val)
 		*(test_vaddrs[i]) = a;
 		kernel_printf("test %d\n", *(test_vaddrs[i]));
 	}
-	// for (int i = 0; i < 1; i++) {
-	// 	int * addr = (int *)0x08000000; 
-	// 	kernel_printf(">>>>> access %x\n", addr);
-	// 	int a = *(addr);
-	// 	kernel_printf("test %d\n", a);
-	// 	kernel_printf("<<<<< access %x end\n", addr);
-	// }
-	// free_mm_struct(mm_current);
+	for (int i = 0; i < 1; i++) {
+		int * addr = (int *)0x08000000; 
+		kernel_printf(">>>>> access %x\n", addr);
+		int a = *(addr);
+		kernel_printf("test %d\n", a);
+		kernel_printf("<<<<< access %x end\n", addr);
+	}
+	free_mm_struct(mm_current);
 	kernel_printf("<<<<<<< end test page fault\n");
-	volatile int i = 0;
+	// volatile int i = 0;
 }
 
 struct mm_struct *create_mm_struct(uint asid)
@@ -194,7 +194,7 @@ void free_mm_struct(struct mm_struct *mm)
 		struct page *pagep = list_entry(p, struct page, list);
 		get_pte(mm->pgd, pagep->virtual)->tlb_entry.reg.V = 0;
 		tlb_reset(mm, pagep->virtual);
-		// kernel_printf("free phy addr: %x\n", get_page_paddr(pagep));
+		kernel_printf("free phy addr: %x\n", get_page_paddr(pagep));
 		list_del(p);
 		free_pages(get_page_paddr(pagep));
 		p = next;
@@ -212,17 +212,34 @@ void free_mm_struct(struct mm_struct *mm)
 void *mmap(const char *file_name)
 {
 	void *ret = nullptr;
-
+	// kernel_printf("test0\n");
 	file *fp = fs_open(file_name, F_MODE_READ);
 	if (IS_ERR_PTR(fp)) {
+		kernel_printf("File Error!\n");
 		return ret;
 	}
-	void *buf = (void *)0x4;
-	while (!eof(fp)) {
-		fs_read(fp, buf, 1);
+	// kernel_printf("test1\n");
+	uint *buf = (uint*)0x1000;
+	int cnt = 0;
+	// kernel_printf("test2\n");
+	while (cnt < 7) {
+		fs_read(fp, buf + cnt++, 4);
+		// char s = fs_getchar(fp);
+		// buf[cnt++] = s;
 	}
+	// kernel_printf("test3\n");
+	// for (int i = 0; i < cnt; i++)
+	// {
+	// 	kernel_printf("%x ", buf[i]);
+	// 	if ((i % 8) == 0)
+	// 	{
+	// 		kernel_printf("\n");
+	// 	}
+	// }
+	// kernel_printf("\n");
 	fs_close(fp);
-
+	kernel_printf("test4\n");
+	ret = (void *)buf;
 	return ret;
 }
 

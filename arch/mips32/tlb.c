@@ -80,9 +80,10 @@ void print_tlb_index(uint index)
 
 void tlb_refill()
 {
-	disable_interrupts();
+	int old = disable_interrupts();
 	__tlb_refill(true);
-	enable_interrupts();
+	if (old)
+		enable_interrupts();
 }
 
 void __tlb_refill(bool random)
@@ -130,7 +131,7 @@ void __tlb_refill(bool random)
 
 void tlb_read_handler(unsigned int status, unsigned int cause, context* context)
 {
-	context->epc -= 4;
+	// context->epc -= 4;
 	uint index;
 	asm volatile(
 		"tlbp\n\t"
@@ -149,7 +150,7 @@ void tlb_read_handler(unsigned int status, unsigned int cause, context* context)
 
 void tlb_write_handler(unsigned int status, unsigned int cause, context* context)
 {
-	context->epc -= 4;
+	// context->epc -= 4;
 	uint index;
 	asm volatile(
 		"tlbp\n\t"

@@ -117,7 +117,11 @@ void parse_cmd(char* cmd)
 // 子进程执行命令
 void exec_cmd(struct command* cmd)
 {
-    if(kernel_strcmp(cmd->cmdName, "pwd") == 0)
+    kernel_printf("\n");
+    if(kernel_strcmp(cmd->cmdName, "") == 0)
+    {
+    }
+    else if(kernel_strcmp(cmd->cmdName, "pwd") == 0)
     {
         pwd();
     } 
@@ -139,6 +143,15 @@ void exec_cmd(struct command* cmd)
 			return;
 		}
         cat(cmd->argList->nextArg->argName);
+    }
+    else if (kernel_strcmp(cmd->cmdName, "exec") == 0)
+    {
+        if(!cmd->argList->nextArg)
+        {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        loadUserProgram(cmd->argList->nextArg->argName);
     }
     else
     {

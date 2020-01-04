@@ -86,5 +86,6 @@ void wakeup();
 void sigHandler(enum signal sig, sig_handler handler);
 void kill(pid_t pid, enum signal sig);
 void waitpid(pid_t pid);
+void loadUserProgram(char* fileName);
 
 #endif  // OS_PC_H

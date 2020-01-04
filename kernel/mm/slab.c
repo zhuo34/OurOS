@@ -145,7 +145,7 @@ void kmem_cache_free_page(struct kmem_cache *cachep, void *pagevp)
 
 void *kmalloc(uint size)
 {
-	disable_interrupts();
+	int old = disable_interrupts();
 	void *ret = nullptr;
 	
 	if (size <= kmem_cache_size[KMEM_CACHE_NUM-1]) {
@@ -161,15 +161,14 @@ void *kmalloc(uint size)
 			ret = get_kernel_vaddr(ret);
 		}
 	}
-	// kernel_printf("kmalloc %x\n", ret);
-	// while (1);
-	enable_interrupts();
+	if (old)
+		enable_interrupts();
 	return ret;
 }
 
 void kfree(void *objp)
 {
-	disable_interrupts();
+	int old = disable_interrupts();
 	struct slab_head *slabp = (struct slab_head *)lower_align((uint)objp, PAGE_SIZE);
 	struct page *pagep = get_page_by_slab(slabp);
 	if (pagep->used_info == BUDDY_SLAB) {
@@ -177,7 +176,8 @@ void kfree(void *objp)
 	} else {
 		free_pages(get_kernel_paddr(objp));
 	}
-	enable_interrupts();
+	if (old)
+		enable_interrupts();
 }
 
 void print_slab_info()

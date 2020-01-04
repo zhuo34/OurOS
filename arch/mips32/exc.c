@@ -9,7 +9,7 @@
 exc_fn exceptions[32];
 
 void do_exceptions(unsigned int status, unsigned int cause, context* pt_context) {
-    disable_interrupts();
+    int old = disable_interrupts();
     int index = cause >> 2;
     index &= 0x1f;
     uint badvaddr, pgd;
@@ -23,6 +23,8 @@ void do_exceptions(unsigned int status, unsigned int cause, context* pt_context)
         exceptions[index](status, cause, pt_context);
     } else {
         kernel_printf("exceptions[%d] %x\n", index, exceptions[index]);
+        kernel_printf("EPC in EXC: 0x%x\n", pt_context->epc);
+        kernel_printf("EPC inst: %x\n", *(uint*)(pt_context->epc));
         kernel_printf("do exception %d\n", index);
         kernel_printf("status %x\n", status);
         kernel_printf("cause %x\n", cause);
@@ -30,7 +32,8 @@ void do_exceptions(unsigned int status, unsigned int cause, context* pt_context)
         while (1)
             ;
     }
-    enable_interrupts();
+    if (old)
+        enable_interrupts();
 }
 
 void register_exception_handler(int index, exc_fn fn) {
@@ -50,6 +53,12 @@ void init_exception() {
     for (int i = 0; i < 32; i++) {
         exceptions[i] = nullptr;
     }
+    // register_excepti     on_handler(10, do_exception_10);
+}
+
+void do_exception_10(unsigned int status, unsigned int cause, context* pt_context)
+{
+
 }
 
 #pragma GCC pop_options

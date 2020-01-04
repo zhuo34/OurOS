@@ -64,6 +64,7 @@ void init_pc()
     pid_status[0] = 1;
     idle->fs = (void*)0;
     idle->signals = 0;
+    idle->mm = 0;
 
     // 将0号进程加入链表
     idle->status = RUNNING;
@@ -84,6 +85,14 @@ void init_pc()
 void activateMemory(struct mm_struct* mm)
 {
     // init_tlb();
+    // kernel_printf("test6\n");
+    // kernel_printf("mm: 0x%x\n", mm);
+    int asid = 0;
+    if (mm)
+    {
+        asid = mm->asid;
+    }
+    
     asm volatile(
         "move $t0, %0\n\t"
         "and $t0, $t0, 0xff\n\t"
@@ -92,8 +101,10 @@ void activateMemory(struct mm_struct* mm)
         "or $t0, $t0, $t1\n\t"
         "mtc0 $t0, $10\n\t"
         :
-        :"r"(mm->asid));
+        :"r"(asid));
+    // kernel_printf("test7\n");
     mm_current = mm;
+    // kernel_printf("test8\n");
 }
 
 // 获取cp0的十号寄存器内容
@@ -349,24 +360,52 @@ void pc_schedule(unsigned int status, unsigned int cause, struct regs_context* p
         }
     }
     finded:
-    // kernel_printf("%d\n", next->pid);
+    // if (next->pid == 1)
+    // {
+    //     kernel_printf("%x\n", next->context.epc);
+    // }
+    // kernel_printf("%s\n", next->name);
+    
     if (next != current)
     {
+        // kernel_printf("\nBefore switch_ex:\n");
+        // kernel_printf("0x%x ", current->context.epc);
+        // kernel_printf("%x ", *((uint*)(current->context.epc)));
+        // kernel_printf("%x \n\n", *((uint*)(current->context.epc) + 1));
+        // 上下文切换
+        copy_context(pt_context, &(current->context));
+        kernel_printf("\nBefore activateMemory:\n");
+        kernel_printf("0x%x ", current->context.epc);
+        kernel_printf("%x ", *((uint*)(current->context.epc)));
+        kernel_printf("%x \n\n", *((uint*)(current->context.epc) + 1));
         // 激活地址空间
         if (next->mm)
         {
             activateMemory(next->mm);
         }
-        // 上下文切换
-        copy_context(pt_context, &(current->context));
+        if (current->pid == 0)
+        {
+            ((uint*)(current->context.epc))[0] = 0x3c08bfc0;
+            ((uint*)(current->context.epc))[1] = 0x35089008;
+            ((uint*)(current->context.epc))[2] = 0x3c09cafe;
+            ((uint*)(current->context.epc))[3] = 0x3529babe;
+            ((uint*)(current->context.epc))[4] = 0xad090000;
+            ((uint*)(current->context.epc))[5] = 0x00000000;
+            ((uint*)(current->context.epc))[6] = 0x00000000;
+        }
         current = next;
         copy_context(&(current->context), pt_context);
+        kernel_printf("After switch_ex:\n");
+        kernel_printf("0x%x ", current->context.epc);
+        kernel_printf("%x ", *((uint*)(current->context.epc)));
+        kernel_printf("%x \n\n", *((uint*)(current->context.epc) + 1));
+        if (current->pid == 0)
+            disable_interrupts();
+        // while (1);
     }
     }
     asm volatile("mtc0 $zero, $9\n\t");
 }
-
-
 
 // 遍历输出链表
 void list_print(struct task_list_node* node)
@@ -612,6 +651,7 @@ void clearup()
 // 加载用户程序使之成为进程
 void loadUserProgram(char* fileName)
 {
+    int old = disable_interrupts();
     // 首先分配一个pid号
     pid_t pid = pid_alloc();
     // 创建内存描述符
@@ -620,9 +660,15 @@ void loadUserProgram(char* fileName)
     activateMemory(mm);
     // 将外存上的文件映射到内存，获取PC值
     void* epc = mmap(fileName);
+    // kernel_printf("test5\n");
+    activateMemory(current->mm);
+    kernel_printf("load epc: %x\n", (unsigned int)epc);
     // 创建进程
     task_create_(pid, fileName, epc, USER, mm);
     // 交调度器定于一尊
+    if (old)
+        enable_interrupts();
+    asm volatile("mtc0 $zero, $9\n\t");
 }
 
 #pragma GCC pop_options
