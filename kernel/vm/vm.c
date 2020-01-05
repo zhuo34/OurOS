@@ -26,7 +26,7 @@ void test_page_fault(int val)
 
 	for (int i = 0; i < 4; i++) {
 		test_vaddrs[i] = (int *)(0x08000000 + 0x00004000 * i);
-		kernel_printf("access %x\n", test_vaddrs[i]);
+		kernel_printf("access %x\t", test_vaddrs[i]);
 		int a = val + i;
 		*(test_vaddrs[i]) = a;
 		kernel_printf("test %d\n", *(test_vaddrs[i]));
@@ -34,7 +34,7 @@ void test_page_fault(int val)
 	if (page_fault_debug) {
 		for (int i = 0; i < 1; i++) {
 			int * addr = (int *)0x08000000; 
-			kernel_printf(">>>>> access %x\n", addr);
+			kernel_printf(">>>>> access %x\t", addr);
 			int a = *(addr);
 			kernel_printf("test %d\n", a);
 			kernel_printf("<<<<< access %x end\n", addr);

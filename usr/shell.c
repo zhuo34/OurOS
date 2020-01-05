@@ -195,6 +195,14 @@ void exec_cmd(struct command* cmd)
             }
         }
     }
+    else if (kernel_strcmp(cmd->cmdName, "sig") == 0)
+    {
+        test_sig();
+    }
+    else if (kernel_strcmp(cmd->cmdName, "ipc") == 0)
+    {
+        test_shm();
+    }
     else
     {
         kernel_printf("%s: unknown command. \n", cmd->cmdName);

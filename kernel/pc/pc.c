@@ -236,7 +236,6 @@ void task_exit()
 
     // 向父进程发送SIGCHILD信号
     wakeup();
-    
     // 从调度表中移除当前进程
     task_list_delete(&(current->node_shedule));
     // 向退出进程表中加入当前进程
@@ -259,6 +258,8 @@ void wakeup()
 // 进程调度
 void pc_schedule(unsigned int status, unsigned int cause, struct regs_context* pt_context)
 {
+    int flag = 0;
+    sig_handler f;
     clearup();
     // kernel_printf("sche\n");
     if (current->status == RUNNING)
@@ -355,8 +356,9 @@ void pc_schedule(unsigned int status, unsigned int cause, struct regs_context* p
         // 收到自定义的保留信号，调用自定义的信号处理函数
         else if (next->signals & SIGRESERVE)
         {
-            sig_handler f = next->handler;
-            f();
+            f = next->handler;
+            
+            flag = 1;
             next->signals ^= SIGRESERVE;
         }
     }
@@ -403,6 +405,11 @@ void pc_schedule(unsigned int status, unsigned int cause, struct regs_context* p
         // if (current->pid == 0)
             // disable_interrupts();
         // while (1);
+        if (flag)
+        {
+            f();
+            flag = 0;
+        }
     }
     }
     asm volatile("mtc0 $zero, $9\n\t");
@@ -645,7 +652,7 @@ void clearup()
         struct task_struct* task_exit = container_of(node, struct task_struct, node_shedule);
         task_list_delete(node);
         task_list_delete(&(task_exit->node));
-        kfree(task_exit);
+        // kfree(task_exit);
     }
 }
 
@@ -683,7 +690,6 @@ struct semaphore* getSem(int key, int value)
     {
         if (sem[i].key == key)
         {
-            sem[i].value = value;
             return &(sem[i]);
         }
     }
@@ -691,6 +697,8 @@ struct semaphore* getSem(int key, int value)
     {
         if (sem[i].key == 0)
         {
+            sem[i].key = key;
+            sem[i].value = value;
             return &(sem[i]);
         }
     }
@@ -706,7 +714,7 @@ void P(struct semaphore* sem)
     // 阻塞
     else
     {
-        while (sem->value) ;
+        while (sem->value <= 0) ;
         --(sem->value);
     }
 }
@@ -715,6 +723,99 @@ void P(struct semaphore* sem)
 void V(struct semaphore* sem)
 {
     ++(sem->value);
+}
+
+void test_handler()
+{
+    kernel_printf("Signal handler\n");
+    int *test_vaddrs[2];
+
+	for (int i = 0; i < 2; i++) {
+		test_vaddrs[i] = (int *)(0x08000000 + 0x00004000 * i);
+		kernel_printf("access %x\t", test_vaddrs[i]);
+		kernel_printf("test %d\n", *(test_vaddrs[i]));
+	}
+    kill(current->parent, SIGSTOP);
+}
+
+void test_sig2()
+{
+    kernel_printf("This is task %d created by %d!\n", current->pid, current->parent);
+    for (int i = 0; i < 2000; ++i)
+    {
+    }
+    kill(current->parent, SIGWAIT);
+    test_page_fault(1926);
+    kill(current->parent, SIGRESERVE);
+    while (1) ;
+}
+
+void test_sig1()
+{
+    sigHandler(SIGRESERVE, test_handler);
+    pid_t pid2 = task_create("test2", test_sig2, 0, (void*)0, USER);
+    kernel_printf("This is task %d created by %d!\n", current->pid, current->parent);
+    while (1)
+    {
+    }
+}
+
+void test_sig()
+{
+    pid_t pid1 = task_create("test1", test_sig1, 0, (void*)0, USER);
+}
+
+void test_shm2()
+{
+    sigHandler(SIGRESERVE, test_handler);
+    void* p = (void*)0x2000;
+    shmat(2, p);
+    struct semaphore* sem = getSem(3, 0);
+    // 阻塞等待
+    // P(sem);
+    kernel_printf("SHM2: %d\n", *((int*)p));
+    *((int*)p) = *((int*)p) + 1;
+    V(sem);
+    test_page_fault(5555);
+    kernel_printf("Task %d wakes up %d!\n", current->pid, current->parent);
+    wakeup();
+    while (1);
+}
+
+void test_shm1()
+{
+    test_page_fault(1926);
+
+    void* p = (void*)0x1000;
+    struct semaphore* sem = getSem(3, 0);
+
+    int shmID = shmget(2, 128);
+    shmat(shmID, p);
+
+    pid_t pid = task_create("test_shm2", test_shm2, 0, (void*)0, USER);
+    P(sem);
+    // 共享内存内的变量加1
+    kernel_printf("SHM1: %d\n", *((int*)p));
+    
+    // 释放一个信号量给另一进程使用
+    // V(sem);
+
+    kernel_printf("Task %d sleeping!\n", current->pid);
+    waitpid(pid);
+    kernel_printf("Task %d waken!\n", current->pid);
+    int *test_vaddrs[2];
+    for (int i = 0; i < 2; i++) {
+		test_vaddrs[i] = (int *)(0x08000000 + 0x00004000 * i);
+		kernel_printf("access %x\t", test_vaddrs[i]);
+		kernel_printf("test %d\n", *(test_vaddrs[i]));
+	}
+    kill(pid, SIGRESERVE);
+    while (1) ;
+}
+
+void test_shm()
+{
+    task_create("test_shm", test_shm1, 0, 0, USER);
 }
 
 #pragma GCC pop_options

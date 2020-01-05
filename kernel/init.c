@@ -150,39 +150,39 @@ void test()
     // while (1);
 }
 
-void test_shm2()
-{
-    kernel_printf("test25\n");
-    void* p = (void*)0x2000;
-    shmat(2, p);
-    struct semaphore* sem = getSem(3, 2);
-    // 阻塞等待
-    P(sem);
-    kernel_printf("SHM2: %d\n", *((int*)p));
-    while (1);
-}
+// void test_shm2()
+// {
+//     kernel_printf("test25\n");
+//     void* p = (void*)0x2000;
+//     shmat(2, p);
+//     struct semaphore* sem = getSem(3, 2);
+//     // 阻塞等待
+//     P(sem);
+//     kernel_printf("SHM2: %d\n", *((int*)p));
+//     while (1);
+// }
 
-void test_shm()
-{
-    kernel_printf("test2\n");
-    void* p = (void*)0x1000;
-    kernel_printf("test21\n");
-    struct semaphore* sem = getSem(3, 0);
-    kernel_printf("test22\n");
-    int shmID = shmget(2, 128);
-    kernel_printf("test23\n");
-    shmat(shmID, p);
-    kernel_printf("test24\n");
-    task_create("test_shm2", test_shm2, 0, (void*)0, USER);
-    kernel_printf("test3\n");
-    // 共享内存内的变量加1
-    kernel_printf("SHM1: %d\n", *((int*)p));
-    *((int*)p) = *((int*)p) + 1;
+// void test_shm()
+// {
+//     kernel_printf("test2\n");
+//     void* p = (void*)0x1000;
+//     kernel_printf("test21\n");
+//     struct semaphore* sem = getSem(3, 0);
+//     kernel_printf("test22\n");
+//     int shmID = shmget(2, 128);
+//     kernel_printf("test23\n");
+//     shmat(shmID, p);
+//     kernel_printf("test24\n");
+//     task_create("test_shm2", test_shm2, 0, (void*)0, USER);
+//     kernel_printf("test3\n");
+//     // 共享内存内的变量加1
+//     kernel_printf("SHM1: %d\n", *((int*)p));
+//     *((int*)p) = *((int*)p) + 1;
     
-    // 释放一个信号量给另一进程使用
-    V(sem);
-    while (1) ;
-}
+//     // 释放一个信号量给另一进程使用
+//     V(sem);
+//     while (1) ;
+// }
 
 void init_kernel() {
     // init_done = 0;
@@ -245,6 +245,7 @@ void init_kernel() {
     // while (1);
     // kernel_printf("test1\n");
     // task_create("test_shm", test_shm, 0, 0, USER);
+    // task_create("shell", osh, 0, 0, USER);
     osh();
 }
 #pragma GCC pop_options

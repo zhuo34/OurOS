@@ -101,5 +101,7 @@ void loadUserProgram(char* fileName);
 struct semaphore* getSem(int key, int value);
 void P(struct semaphore* sem);
 void V(struct semaphore* sem);
+void test_sig();
+void test_shm();
 
 #endif  // OS_PC_H
