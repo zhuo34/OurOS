@@ -176,6 +176,18 @@ exception:
 	print_error_info(error, src);
 }
 
+void app(const char *filename, const char *str)
+{
+	int error = NO_ERROR;
+	file *fp = fs_open(filename, F_MODE_APPEND);
+	if(IS_ERR_PTR(fp)) {
+		error = PTR_ERR(fp);
+		return;
+	}
+	fs_puts(fp, str);
+	fs_close(fp);
+}
+
 void print_prompt()
 {
 	kernel_printf("[user@localhost ");

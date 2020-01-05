@@ -15,6 +15,7 @@ void touch(const char *filename);
 void mkdir(const char *filename);
 void rm(const char *filename);
 void mv(const char *src, const char *dst);
+void app(const char *filename, const char *str);
 
 // 输出命令行提示符
 void print_prompt();

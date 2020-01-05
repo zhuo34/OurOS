@@ -17,7 +17,7 @@
 #define ERROR_UNKNOWN_FORMAT 	9
 #define ERROR_ACCESS_AUTHORITY 	10
 #define ERROR_NOT_EMPTY 		11
-
+#define ERROR_NOT_IMPLEMENT 	12
 
 #define MAX_ERRNO				4095
 #define IS_ERR_VALUE(x) 		( (uint)(x) >= (uint)(-MAX_ERRNO) )

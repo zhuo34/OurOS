@@ -203,6 +203,46 @@ void exec_cmd(struct command* cmd)
     {
         test_shm();
     }
+    else if (kernel_strcmp(cmd->cmdName, "rm") == 0) 
+    {
+        if(!cmd->argList->nextArg) {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        rm(cmd->argList->nextArg->argName);
+    }
+    else if (kernel_strcmp(cmd->cmdName, "mkdir") == 0) 
+    {
+        if(!cmd->argList->nextArg) {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        mkdir(cmd->argList->nextArg->argName);
+    } 
+    else if (kernel_strcmp(cmd->cmdName, "touch") == 0) 
+    {
+        if(!cmd->argList->nextArg) {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        touch(cmd->argList->nextArg->argName);
+    } 
+    else if (kernel_strcmp(cmd->cmdName, "mv") == 0) 
+    {
+        if(!cmd->argList->nextArg || !cmd->argList->nextArg->nextArg) {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        mv(cmd->argList->nextArg->argName, cmd->argList->nextArg->nextArg->argName);
+    } 
+    else if (kernel_strcmp(cmd->cmdName, "app") == 0) 
+    {
+        if(!cmd->argList->nextArg) {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        app(cmd->argList->nextArg->argName, cmd->argList->nextArg->nextArg->argName);
+    }
     else
     {
         kernel_printf("%s: unknown command. \n", cmd->cmdName);
