@@ -162,11 +162,11 @@ void print_buddy_info()
 {
 	kernel_printf("<=== buddy info ===>\n");
 
-	kernel_printf("start pfn\t%d\n", buddy_mm.start_pfn);
-	kernel_printf("page num\t%d\n", buddy_mm.page_num);
-	kernel_printf("all pages addr\t%x\n", all_pages);
+	// kernel_printf("start pfn\t%d\n", buddy_mm.start_pfn);
+	// kernel_printf("page num\t%d\n", buddy_mm.page_num);
+	// kernel_printf("all pages addr\t%x\n", all_pages);
 
-	kernel_printf("\n");
+	// kernel_printf("\n");
 	print_freelist_info();
 
 	kernel_printf("<=== buddy info end ===>\n");
@@ -174,25 +174,27 @@ void print_buddy_info()
 
 void print_freelist_info()
 {
-	kernel_printf("===> free page info\n");
+	// kernel_printf("===> free page info\n");
 	for (int i = 0; i <= MAX_BUDDY_ORDER; i++) {
-		kernel_printf("=>bplevel\t%d\n", i);
+		kernel_printf("\t%d", i);
+	}
+	kernel_printf("\n");
+	for (int i = 0; i <= MAX_BUDDY_ORDER; i++) {
 		struct page *p;
 		int cnt = 0;
 		list_for_each_entry(p, &(buddy_mm.free_area[i].freelist), list) {
 			cnt ++;
 			// kernel_printf("%d\t%x\n", p->bplevel, p->used_info);
 		}
-		kernel_printf("cnt = %d\n", cnt);
+		kernel_printf("\t%d", cnt);
 	}
+	kernel_printf("\n");
 }
 
-void test_buddy()
+void test_buddy(int level)
 {
-	void * addr1 = alloc_pages(4096);
-    void * addr2 = alloc_pages(4096 * 4);
-    void * addr3 = alloc_pages(4096 * 4);
-    free_pages(addr2);
+	void * addr1 = alloc_pages(4096 << level);
+	print_buddy_info();
     free_pages(addr1);
 	print_buddy_info();
 }

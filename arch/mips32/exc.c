@@ -12,13 +12,7 @@ void do_exceptions(unsigned int status, unsigned int cause, context* pt_context)
     int old = disable_interrupts();
     int index = cause >> 2;
     index &= 0x1f;
-    uint badvaddr, pgd;
-	// asm volatile(
-	// 	"mfc0 %0, $8\n\t"			// output BadVAddr
-	// 	: "=r" (badvaddr)
-	// );
-    // kernel_printf("BadVAddr: %x\n", badvaddr);
-    // kernel_printf("exceptions[%d] %x\n", index, exceptions[index]);
+	
     if (exceptions[index]) {
         exceptions[index](status, cause, pt_context);
     } else {

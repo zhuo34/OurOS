@@ -186,9 +186,8 @@ void print_slab_info()
 
 	for (int i = 0; i < KMEM_CACHE_NUM; i++) {
 		struct kmem_cache *cachep = kmem_caches + i;
-		kernel_printf("kemem_cache: %d\n", i);
-		kernel_printf("size = %d, object_size = %d\n", cachep->size, cachep->object_size);
-		kernel_printf("capacity = %d\n", cachep->capacity);
+		// kernel_printf("size = %d, object_size = %d\n", cachep->size, cachep->object_size);
+		// kernel_printf("capacity = %d\n", cachep->capacity);
 		int page_cnt = 0;
 		int slab_alloc_cnt = 0;
 		int slab_free_cnt = 0;
@@ -202,16 +201,23 @@ void print_slab_info()
 			slab_free_cnt += cachep->capacity;
 		}
 		list_for_each_entry(pagep, &cachep->node.partial, list) {
-			kernel_printf("partial\n");
+			// kernel_printf("partial\n");
 			page_cnt ++;
 			struct slab_head *slabp = pagep->virtual;
 			slab_alloc_cnt += slabp->alloc_num;
 			slab_free_cnt += cachep->capacity - slabp->alloc_num;
 		}
-		kernel_printf("page_num = %d\n", page_cnt);
-		kernel_printf("total_slab_num = %d\n", page_cnt * cachep->capacity);
-		kernel_printf("alloc_num = %d\n", slab_alloc_cnt);
-		kernel_printf("free_num = %d\n", slab_free_cnt);
+		if (page_cnt) {
+			kernel_printf("%d:", cachep->object_size);
+			kernel_printf("\t%d", page_cnt);
+			kernel_printf("\t%d", page_cnt * cachep->capacity);
+			kernel_printf("\t%d", slab_alloc_cnt);
+			kernel_printf("\t%d\n", slab_free_cnt);
+		}
+		// kernel_printf("page_num = %d\n", page_cnt);
+		// kernel_printf("total_slab_num = %d\n", page_cnt * cachep->capacity);
+		// kernel_printf("alloc_num = %d\n", slab_alloc_cnt);
+		// kernel_printf("free_num = %d\n", slab_free_cnt);
 	}
 
 	kernel_printf("<===== Slab Info End =====>\n");
@@ -219,30 +225,16 @@ void print_slab_info()
 
 void test_slab()
 {
-	// void **addrs = (void **)kmalloc(4 * 555);
-	for (int i = 0; i < 2; i++) {
-		void *addr = kmalloc(8);
-		kernel_printf("%x\n", addr);
-		kfree(addr);
+	void **addrs = (void **)kmalloc(sizeof(void *) * 158); // 632
+	for (int i = 0; i < 16; i++) {
+		addrs[i] = kmalloc(256);
 	}
-	for (int i = 0; i < 2; i++) {
-		void *addr = kmalloc(16);
-		kernel_printf("%x\n", addr);
-		kfree(addr);
-	}
-	void *addr = kmalloc(8);
-	void *addr2 = kmalloc(16);
-	// kernel_printf("%x\n", addrs);
-	// for (int i = 1; i < 255; i++) {
-	// 	kfree(addrs[i]);
-	// }
 	print_slab_info();
-	// print_buddy_info();
-	kfree(addr);
-	kfree(addr2);
-	// kernel_printf("%x\n", addr);
-
-	// kfree(addrs);
+	for (int i = 0; i < 16; i++) {
+		kfree(addrs[i]);
+	}
+	kfree(addrs);
+	print_slab_info();
 }
 
 #pragma GCC pop_options

@@ -8,7 +8,10 @@
 
 #define PGD_NUM (1 << 10)
 #define PTE_NUM (1 << 10)
+
 #define MAX_PFN_PER_PROCESS MACHINE_PAGE_NUM
+
+extern int page_fault_debug;
 
 struct __pte_t {
 	union EntryLo tlb_entry;
@@ -18,8 +21,6 @@ typedef struct __pte_t pte_t;
 typedef struct __pte_t* pgd_t;
 
 extern struct mm_struct *mm_current;
-
-void test_tlb_refill(int val);
 
 struct vm_area_struct {
 
@@ -34,6 +35,9 @@ struct mm_struct {
 	int pf_num;
 	struct list_head fifo;
 };
+
+extern void init_page_pool();
+void test_page_fault(int val);
 
 struct mm_struct *create_mm_struct(uint asid);
 void free_mm_struct(struct mm_struct *mm);

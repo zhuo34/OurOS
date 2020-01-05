@@ -40,4 +40,6 @@ void kfree(void *objp);
 
 void test_slab();
 
+void print_slab_info();
+
 #endif // OUROS_SLAB_H

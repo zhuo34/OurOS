@@ -47,7 +47,7 @@ void test2()
 {
     kernel_printf("test6\n");
     
-    test_tlb_refill(1926);
+    test_page_fault(1926);
     // int x, y;
     // asm volatile(
     //     "mfc0 %1, $11\n\t"
@@ -64,7 +64,7 @@ void test2()
     //         kernel_printf("%d\n", i);
     // }
     // kill(current->parent, SIGCHILD);
-    // test_tlb_refill(1999);
+    // test_page_fault(1999);
     while (1)
     {
         // kernel_printf("test6\n");
@@ -72,7 +72,7 @@ void test2()
     
     // while (1);
 
-    // test_tlb_refill();
+    // test_page_fault();
 }
 void test5()
 {
@@ -93,15 +93,15 @@ void test1()
 {
     kernel_printf("test\n");
     // sigHandler(SIGRESERVE, test3);
-    // test_tlb_refill(5575);
+    // test_page_fault(5575);
     
     // for (int i = 0 ; i < 1000; ++i)
     // {
     //     if (!(i % 100))
     //         kernel_printf("%d\n", i);
     // }
-    test_tlb_refill(5555);
-    // test_tlb_refill(1000);
+    test_page_fault(5555);
+    // test_page_fault(1000);
     
     // kernel_printf("qiguai\n");
     // 什么鬼？
@@ -205,8 +205,7 @@ void init_kernel() {
     init_slab();
     log(LOG_OK, "Slab.");
     log(LOG_END, "Memory Modules.");
-    // test_tlb_refill();
-    // while (1);
+	init_page_pool();
 
     // File system
     log(LOG_START, "File System.");

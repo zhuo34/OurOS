@@ -153,6 +153,48 @@ void exec_cmd(struct command* cmd)
 		}
         loadUserProgram(cmd->argList->nextArg->argName);
     }
+    else if (kernel_strcmp(cmd->cmdName, "print") == 0)
+    {
+        if(!cmd->argList->nextArg)
+        {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        else if (kernel_strcmp(cmd->argList->nextArg->argName, "buddy") == 0) {
+            print_buddy_info();
+        } else if (kernel_strcmp(cmd->argList->nextArg->argName, "slab") == 0) {
+            print_slab_info();
+        } else if (kernel_strcmp(cmd->argList->nextArg->argName, "tlb") == 0) {
+            print_tlb();
+        }
+    }
+    else if (kernel_strcmp(cmd->cmdName, "test") == 0)
+    {
+        if(!cmd->argList->nextArg)
+        {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        else if (kernel_strcmp(cmd->argList->nextArg->argName, "buddy") == 0) {
+            if(cmd->argList->nextArg->nextArg) {
+                test_buddy(cmd->argList->nextArg->nextArg->argName[0] - '0');
+            } else {
+                kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+                return;
+            }
+        } else if (kernel_strcmp(cmd->argList->nextArg->argName, "slab") == 0) {
+            test_slab();
+        } else if (kernel_strcmp(cmd->argList->nextArg->argName, "pf") == 0) {
+            if(cmd->argList->nextArg->nextArg) {
+                page_fault_debug = 1;
+                test_page_fault(cmd->argList->nextArg->nextArg->argName[0] - '0');
+                page_fault_debug = 0;
+            } else {
+                kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+                return;
+            }
+        }
+    }
     else
     {
         kernel_printf("%s: unknown command. \n", cmd->cmdName);

@@ -13,14 +13,14 @@
 #pragma GCC optimize("O0")
 
 struct mm_struct *mm_current;
-// int debug = 0;
+int page_fault_debug = 0;
 
-void test_tlb_refill(int val)
+void test_page_fault(int val)
 {
-	init_page_pool();
 	kernel_printf(">>>>>>> start test page fault\n");
-	
-	mm_current = create_mm_struct(0);
+	if (page_fault_debug) {
+		mm_current = create_mm_struct(0);
+	}
 
 	int *test_vaddrs[4];
 
@@ -31,16 +31,17 @@ void test_tlb_refill(int val)
 		*(test_vaddrs[i]) = a;
 		kernel_printf("test %d\n", *(test_vaddrs[i]));
 	}
-	for (int i = 0; i < 1; i++) {
-		int * addr = (int *)0x08000000; 
-		kernel_printf(">>>>> access %x\n", addr);
-		int a = *(addr);
-		kernel_printf("test %d\n", a);
-		kernel_printf("<<<<< access %x end\n", addr);
+	if (page_fault_debug) {
+		for (int i = 0; i < 1; i++) {
+			int * addr = (int *)0x08000000; 
+			kernel_printf(">>>>> access %x\n", addr);
+			int a = *(addr);
+			kernel_printf("test %d\n", a);
+			kernel_printf("<<<<< access %x end\n", addr);
+		}
+		free_mm_struct(mm_current);
 	}
-	free_mm_struct(mm_current);
 	kernel_printf("<<<<<<< end test page fault\n");
-	// volatile int i = 0;
 }
 
 struct mm_struct *create_mm_struct(uint asid)
@@ -95,8 +96,6 @@ int find_vma(struct mm_struct *mm, void *vaddr)
 
 void do_pagefault(void *vaddr)
 {
-	// kernel_printf("do pagefault\n");
-	// kernel_printf("addr %x\n", vaddr);
 	int vma = find_vma(mm_current, vaddr);
 	if (vma) {
 		pte_t *pte = get_pte(mm_current->pgd, vaddr);
@@ -108,7 +107,10 @@ void do_pagefault(void *vaddr)
 		 * from BUDDY system.
 		 */
 		void *paddr = nullptr;
-		if (mm_current->pf_num < MAX_PFN_PER_PROCESS) {
+		uint max = MAX_PFN_PER_PROCESS;
+		if (page_fault_debug)
+			max = 3;
+		if (mm_current->pf_num < max) {
 			paddr = alloc_one_page();
 			if (paddr) {
 				/**
@@ -118,8 +120,6 @@ void do_pagefault(void *vaddr)
 				 * 3. pfn_num of this process increament
 				 */
 				struct page *pagep = get_page_by_paddr(paddr);
-				// kernel_printf("alloc phy addr: %x\n", paddr);
-				// while (1);
 				pagep->virtual = vaddr;
 				list_add_tail(&pagep->list, &mm_current->fifo);
 				mm_current->pf_num ++;
@@ -136,6 +136,8 @@ void do_pagefault(void *vaddr)
 			 */
 			paddr = swap_one_page(mm_current, vaddr);
 		}
+		if (page_fault_debug)
+			kernel_printf("mapped phy addr: %x\n", paddr);
 		uint lo = (((uint)paddr >> PAGE_SHIFT) << 6) | 0x1f;
 		set_pte_tlb_entry(pte, lo);
 	} else {
@@ -153,10 +155,12 @@ void *swap_one_page(struct mm_struct *mm, void *vaddr)
 	void *vaddr_out = pagep->virtual;
 	pte_t *pte = get_pte(mm->pgd, vaddr_out);
 	void *paddr = (void *) (pte->tlb_entry.reg.PFN << PAGE_SHIFT);
-	// kernel_printf("swap out paddr %x\n", paddr);
+	if (page_fault_debug) {
+		kernel_printf("swap out vaddr %x\n", vaddr_out);
+	}
 
 	// kernel_printf("new block num: %d\n", write_page_to_disk(vaddr_out, pte->info));
-	write_page_to_disk(vaddr_out, pte->info);
+	pte->info = write_page_to_disk(vaddr_out, pte->info);
 	load_page_from_disk(vaddr_out, get_pte(mm->pgd, vaddr)->info);
 	/**
 	 * 1. tlb reset
@@ -169,7 +173,6 @@ void *swap_one_page(struct mm_struct *mm, void *vaddr)
 	 */
 	pte->tlb_entry.reg.V = 0;
 	tlb_reset(mm, vaddr_out);
-	// while (1);
 
 	pagep->virtual = vaddr;
 	list_del(&pagep->list);
@@ -192,9 +195,11 @@ void free_mm_struct(struct mm_struct *mm)
 	while (p != &mm->fifo) {
 		struct list_head *next = p->next;
 		struct page *pagep = list_entry(p, struct page, list);
-		get_pte(mm->pgd, pagep->virtual)->tlb_entry.reg.V = 0;
+		pte_t *pte = get_pte(mm->pgd, pagep->virtual);
+		pte->tlb_entry.reg.V = 0;
 		tlb_reset(mm, pagep->virtual);
-		kernel_printf("free phy addr: %x\n", get_page_paddr(pagep));
+		if (page_fault_debug)
+			kernel_printf("free phy addr: %x\n", get_page_paddr(pagep));
 		list_del(p);
 		free_pages(get_page_paddr(pagep));
 		p = next;
@@ -212,33 +217,17 @@ void free_mm_struct(struct mm_struct *mm)
 void *mmap(const char *file_name)
 {
 	void *ret = nullptr;
-	// kernel_printf("test0\n");
 	file *fp = fs_open(file_name, F_MODE_READ);
 	if (IS_ERR_PTR(fp)) {
 		kernel_printf("File Error!\n");
 		return ret;
 	}
-	// kernel_printf("test1\n");
-	uint *buf = (uint*)0x1000;
+	uchar *buf = (uchar*)0x1000;
 	int cnt = 0;
-	// kernel_printf("test2\n");
-	while (cnt < 7) {
-		fs_read(fp, buf + cnt++, 4);
-		// char s = fs_getchar(fp);
-		// buf[cnt++] = s;
+	while (!eof(fp)) {
+		fs_read(fp, buf + cnt++, 1);
 	}
-	// kernel_printf("test3\n");
-	// for (int i = 0; i < cnt; i++)
-	// {
-	// 	kernel_printf("%x ", buf[i]);
-	// 	if ((i % 8) == 0)
-	// 	{
-	// 		kernel_printf("\n");
-	// 	}
-	// }
-	// kernel_printf("\n");
 	fs_close(fp);
-	kernel_printf("test4\n");
 	ret = (void *)buf;
 	return ret;
 }

@@ -8,6 +8,7 @@ struct page_pool_struct {
 	int far_next;
 	uint next_free;
 	uint entry[MACHINE_PAGE_NUM];
+	void *block[MACHINE_PAGE_NUM];
 };
 
 extern struct page_pool_struct page_pool;

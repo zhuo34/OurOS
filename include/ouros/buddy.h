@@ -48,6 +48,6 @@ void *alloc_one_page();
 
 void print_buddy_info();
 
-void test_buddy();
+void test_buddy(int level);
 
 #endif // OUROS_BUDDY_H
