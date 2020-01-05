@@ -86,6 +86,9 @@ void tlb_refill()
 		enable_interrupts();
 }
 
+/**
+ * @brief TLB refill
+ */
 void __tlb_refill(bool random)
 {
 	uint bad_vaddr, entrylo0, entrylo1;
@@ -95,8 +98,10 @@ void __tlb_refill(bool random)
 		: "=r"(bad_vaddr)
 	);
 
+	/* Get pte. */
 	pte = get_pte(mm_current->pgd, (void *)bad_vaddr);
 
+	/* Load page table information. */
 	if (!addr_bind_to_lo1(bad_vaddr)) {
 		entrylo0 = get_pte_tlb_entry(pte);
 		entrylo1 = get_pte_tlb_entry(pte + 1);

@@ -7,26 +7,29 @@ struct bootmm_sys boot_mm;
 void init_bootmm()
 {
 	// init boot_mm
-	// kernel_printf("init boot_mm\n");
 	kernel_memset(&boot_mm, 0, sizeof(boot_mm));
 	// init physical memory size and page frame number
-	// kernel_printf("init physical memory size and page frame number\n");
 	boot_mm.phymm_size = get_phymm_size();
 	boot_mm.page_num = boot_mm.phymm_size >> PAGE_SHIFT;
 	// init page_map
-	// kernel_printf("init page_map\n");
 	kernel_memset(boot_mm.page_map, PAGE_FREE, MACHINE_PAGE_NUM);
 	// init info
-	// kernel_printf("init info\n");
 	boot_mm.info_cnt = 0;
 	// alloc kernel memory 16M
-	// kernel_printf("alloc kernel memory 16M\n");
 	uint kmm_size = 16 * MB;
 	uint kmm_pfn = kmm_size >> PAGE_SHIFT;
 	insert_bootmm_info(&boot_mm, 0, kmm_size, MMINFO_TYPE_KERNEL);
 	kernel_memset(boot_mm.page_map, PAGE_USED, kmm_pfn);
 }
 
+/**
+ * @brief Insert allocate information.
+ * @param mm			bootmm system
+ * @param start_addr	start address
+ * @param length		allocate length
+ * @param type			allocate type
+ * @return insert information
+ */
 uint insert_bootmm_info(struct bootmm_sys *mm, uint start_addr, uint length, uint type)
 {
 	uint ret = 0;
@@ -81,7 +84,13 @@ uint delete_bootmm_info(struct bootmm_sys *mm, uint index)
 	mm->info_cnt--;
 	return 1;
 }
-
+/**
+ * @brief Split allocated space.
+ * @param mm				bootmm system
+ * @param index				index of allocated space to be split
+ * @param split_addr_start	split position
+ * @return split information
+ */
 uint split_bootmm_info(struct bootmm_sys *mm, uint index, uint split_addr_start)
 {
 	if (index >= mm->info_cnt)
@@ -99,9 +108,12 @@ uint split_bootmm_info(struct bootmm_sys *mm, uint index, uint split_addr_start)
 }
 
 /**
- * @description:
- * @param
- * @return
+ * @brief Allocate pages from bootmm system.
+ * @param mm			bootmm system
+ * @param size			allocated size
+ * @param type			allocated type
+ * @param addr_align	align
+ * @return	physical address
  */
 void* bootmm_alloc_page(struct bootmm_sys *mm, uint size, uint type, uint addr_align)
 {
@@ -124,6 +136,12 @@ void* bootmm_alloc_page(struct bootmm_sys *mm, uint size, uint type, uint addr_a
 	return (void *)(res << PAGE_SHIFT);
 }
 
+/**
+ * @brief [unused] Free pages allocated by bootmm system.
+ * @param mm		bootmm system
+ * @param addr		address of pages to be free
+ * @param size		size of pages to be free
+ */
 void bootmm_free_page(struct bootmm_sys *mm, void *addr, uint size)
 {
 	if (get_low_bits((uint)addr, PAGE_SHIFT) != 0) {
@@ -167,9 +185,13 @@ void bootmm_free_page(struct bootmm_sys *mm, void *addr, uint size)
 }
 
 /**
- * @description: 
- * @param {type} 
- * @return: 
+ * @brief Find if bootmm has free pages cover given page number. 
+ * @param mm		bootmm system
+ * @param page_cnt	page number
+ * @param pfn_start	search start from this
+ * @param pfn_start	search end to this
+ * @param pfn_align	required align
+ * @return find reult
  */
 uint find_pages(struct bootmm_sys *mm, uint page_cnt, uint pfn_start, uint pfn_end, uint pfn_align)
 {

@@ -5,6 +5,9 @@
 struct page *all_pages;
 struct buddy_zone buddy_mm;
 
+/**
+ * @brief Initialize buddy system.
+ */
 void init_buddy()
 {
 	// allocate memory for buddy pages
@@ -39,6 +42,11 @@ void init_buddy()
 	}
 }
 
+/**
+ * @brief Check if a page is in a buddy zone.
+ * @param mm	buddy zone
+ * @param page	page pointer
+ */
 bool page_is_in_freelist(struct buddy_zone *mm, struct page *page)
 {
 	bool ret = true;
@@ -53,10 +61,13 @@ bool page_is_in_freelist(struct buddy_zone *mm, struct page *page)
 	return ret;
 }
 
+/**
+ * @brief Free a page belong to mm.
+ * @param mm	buddy zone
+ * @param page	page pointer
+ */
 void __free_pages(struct buddy_zone *mm, struct page *page)
 {
-	// lock
-
 	uint this_pgn = get_pgn(page);
 	if (!pgn_is_in_zone(mm, this_pgn)) {
 		kernel_printf("Free a page not in this buddy zone!\n");
@@ -69,6 +80,7 @@ void __free_pages(struct buddy_zone *mm, struct page *page)
 	while (bplevel < MAX_BUDDY_ORDER) {
 		uint buddy_pgn = get_buddy_pgn(this_pgn, bplevel);
 		struct page *buddy_page = get_page_by_pgn(buddy_pgn);
+		/* Check if buddy page is also free and in this level. */
 		if (bplevel != buddy_page->bplevel || buddy_page->used_info != BUDDY_FREE) {
 			break;
 		}
@@ -81,10 +93,12 @@ void __free_pages(struct buddy_zone *mm, struct page *page)
 	page->bplevel = bplevel;
 	page->used_info = BUDDY_FREE;
 	list_add_tail(&(page->list), &(mm->free_area[bplevel].freelist));
-
-	// unlock
 }
 
+/**
+ * @brief Free a page from physical address.
+ * @param addr	physical address
+ */
 void free_pages(void *addr)
 {
 	if (!get_low_bits((uint)addr, 12)) {
@@ -94,6 +108,13 @@ void free_pages(void *addr)
 	}
 }
 
+/**
+ * @brief Allocate pages in given level with given type from given buddy zone.
+ * @param mm		buddy zone
+ * @param bplevel	level
+ * @param type		type
+ * @return allocated struct pages
+ */
 struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel, int type)
 {
 	struct page *ret = nullptr;
@@ -101,16 +122,18 @@ struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel, int type)
 		return ret;
 	}
 	int free_bplevel = -1;
-	// lock
-
+	/* Find lowest level higher than given level with a free node. */
 	for (int i = bplevel; i <= MAX_BUDDY_ORDER; i++) {
 		if (!list_empty(&(mm->free_area[i].freelist))) {
 			free_bplevel = i;
 			break;
 		}
 	}
-	
 	if (free_bplevel != -1) {
+		/**
+		 * If find proper level to allocate, split and send half of the buddy pair
+		 * to lower level, until reaching given level.
+		 */
 		struct page *free_page = list_last_entry(&(mm->free_area[free_bplevel].freelist), struct page, list);
 		list_del_init(&(free_page->list));
 		uint free_pgn = get_pgn(free_page);
@@ -122,6 +145,7 @@ struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel, int type)
 			page_not_used->used_info = BUDDY_FREE;
 			list_add_tail(&(page_not_used->list), &(mm->free_area[free_bplevel].freelist));
 		}
+		/* Set parameters. */
 		struct page *page_alloc = get_page_by_pgn(free_pgn);
 		page_alloc->bplevel = bplevel;
 		page_alloc->used_info = type;
@@ -131,11 +155,14 @@ struct page *__alloc_pages(struct buddy_zone *mm, uint bplevel, int type)
 	} else {
 		kernel_printf("Buddy no enough memory!\n");
 	}
-
-	// unlock
 	return ret;
 }
 
+/**
+ * @brief Allocate pages covered given size.
+ * @param size	size
+ * @return allocated physical address
+ */
 void *alloc_pages(uint size)
 {
 	int bplevel = 0;
@@ -153,6 +180,10 @@ void *alloc_pages(uint size)
 	return ret;
 }
 
+/**
+ * @brief Allocate 1 page.
+ * @return allocated physical address
+ */
 void *alloc_one_page()
 {
 	return alloc_pages(PAGE_SIZE);
@@ -162,11 +193,6 @@ void print_buddy_info()
 {
 	kernel_printf("<=== buddy info ===>\n");
 
-	// kernel_printf("start pfn\t%d\n", buddy_mm.start_pfn);
-	// kernel_printf("page num\t%d\n", buddy_mm.page_num);
-	// kernel_printf("all pages addr\t%x\n", all_pages);
-
-	// kernel_printf("\n");
 	print_freelist_info();
 
 	kernel_printf("<=== buddy info end ===>\n");
@@ -174,7 +200,6 @@ void print_buddy_info()
 
 void print_freelist_info()
 {
-	// kernel_printf("===> free page info\n");
 	for (int i = 0; i <= MAX_BUDDY_ORDER; i++) {
 		kernel_printf("\t%d", i);
 	}
@@ -184,7 +209,6 @@ void print_freelist_info()
 		int cnt = 0;
 		list_for_each_entry(p, &(buddy_mm.free_area[i].freelist), list) {
 			cnt ++;
-			// kernel_printf("%d\t%x\n", p->bplevel, p->used_info);
 		}
 		kernel_printf("\t%d", cnt);
 	}

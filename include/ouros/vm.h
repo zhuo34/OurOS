@@ -6,12 +6,55 @@
 #include <linux/list.h>
 #include <ouros/mm.h>
 
-#define PGD_NUM (1 << 10)
-#define PTE_NUM (1 << 10)
-
 #define MAX_PFN_PER_PROCESS MACHINE_PAGE_NUM
 
 extern int page_fault_debug;
+
+/**
+ * ****************************
+ * +  Virtual Memory in MIPS  +
+ * ****************************
+ * MIPS virtual memory space can be divided into 4 parts:
+ *                   ++++++++++++++++++++++
+ *                   |    kernel (1 G)    |
+ *        kseg2      |   mapped, cached   |
+ *    0xC000_0000 => ++++++++++++++++++++++
+ *                   |   kernel (512 M)   |
+ *        kseg1      | unmapped, uncached |
+ *    0xA000_0000 => ++++++++++++++++++++++
+ *                   |   kernel (512 M)   |
+ *        kseg0      |  unmapped, cached  |
+ *    0x8000_0000 => ++++++++++++++++++++++
+ *                   |     user (2 G)     |
+ *         useg      |   mapped, cached   |
+ *    0x0000_0000 => ++++++++++++++++++++++
+ * 
+ * Unmapped means not using MMU, uncached means not using cache.
+ * The former is easy to convert virtual address to physical address:
+ * virtual => physical: reset highest 3 bits.
+ * 
+ * In two unmapped segment, kseg1 does not use cache, for I/O, DMA, etc.
+ * kseg0 is managed by kmalloc/kfree.
+ * 
+ * kseg2 is just like useg, using MMU, but is only used in kernel,
+ * managed by vmalloc (Unimplemented).
+ * 
+ * useg is for user space.
+ * 
+ * ****************
+ * +  Page Table  +
+ * ****************
+ * 32 bit virtual address => 4 GB virtual space
+ * => 1 M pages => 8 MB page table (8 B per entry)
+ * 
+ * 2-level page table, with 10 bits pgd index, 10 bits pte index, 12 page offset
+ * virtual address:
+ *        +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *        |  pgd 10 bits  |  pgd 10 bits  |  page offset 10 bits  |
+ *        +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ */
+#define PGD_NUM (1 << 10)
+#define PTE_NUM (1 << 10)
 
 struct __pte_t {
 	union EntryLo tlb_entry;

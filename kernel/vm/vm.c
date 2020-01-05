@@ -21,29 +21,35 @@ void test_page_fault(int val)
 	if (page_fault_debug) {
 		mm_current = create_mm_struct(0);
 	}
-
+	/**
+	 * In page fault debug, MAX_PFN_PER_PROCESS is set to 3.
+	 * Use 4 test virtuak addressess here for testing swap page.
+	 */
 	int *test_vaddrs[4];
-
 	for (int i = 0; i < 4; i++) {
-		test_vaddrs[i] = (int *)(0x08000000 + 0x00004000 * i);
-		kernel_printf("access %x\t", test_vaddrs[i]);
+		test_vaddrs[i] = (int *)(0x08000000 + 0x00004000 * i);	// 0x0800_?000
+		kernel_printf("access %x\n", test_vaddrs[i]);
 		int a = val + i;
-		*(test_vaddrs[i]) = a;
-		kernel_printf("test %d\n", *(test_vaddrs[i]));
+		*(test_vaddrs[i]) = a;							// directly access virtual address
+		kernel_printf("test %d\n", *(test_vaddrs[i]));	// test if page fault done
 	}
-	if (page_fault_debug) {
-		for (int i = 0; i < 1; i++) {
-			int * addr = (int *)0x08000000; 
-			kernel_printf(">>>>> access %x\t", addr);
-			int a = *(addr);
-			kernel_printf("test %d\n", a);
-			kernel_printf("<<<<< access %x end\n", addr);
-		}
+	if (page_fault_debug) {								// for testing page fault swap page
+		/* access 0x0800_0000 which is swapped out*/
+		int * addr = (int *)0x08000000;
+		kernel_printf(">>>>> access %x\n", addr);
+		int a = *(addr);
+		kernel_printf("test %d\n", a);
+		kernel_printf("<<<<< access %x end\n", addr);
 		free_mm_struct(mm_current);
 	}
 	kernel_printf("<<<<<<< end test page fault\n");
 }
 
+/**
+ * @brief Create a new mm_struct.
+ * @param asid	process asid
+ * @return mm_struct
+ */
 struct mm_struct *create_mm_struct(uint asid)
 {
 	struct mm_struct *mm = (struct mm_struct *)kmalloc(sizeof(struct mm_struct));
@@ -55,6 +61,10 @@ struct mm_struct *create_mm_struct(uint asid)
 	return mm;
 }
 
+/**
+ * @brief Create first level page table.
+ * @return pgd pointer
+ */
 pgd_t *create_pt()
 {
 	pgd_t *ret = (pgd_t *)kmalloc(sizeof(pgd_t) * PGD_NUM);
@@ -62,11 +72,21 @@ pgd_t *create_pt()
 	return ret;
 }
 
+/**
+ * @brief Get pte of a virtual address.
+ * @param pgd	page table
+ * @param vaddr	virtual addrss
+ * @return pte pointer
+ */
 pte_t *get_pte(pgd_t *pgd, void *vaddr)
 {
 	uint addr = (uint) vaddr;
 	uint pgd_idx = addr >> 22;
 	if (!pgd[pgd_idx]) {
+		/**
+		 * If this second level page table is not allocated,
+		 * then allocate memory at this first access time.
+		 */
 		pgd[pgd_idx] = (pte_t *)kmalloc(sizeof(pte_t) * PTE_NUM);
 		kernel_memset(pgd[pgd_idx], 0, sizeof(pte_t) * PTE_NUM);
 	}
@@ -74,26 +94,51 @@ pte_t *get_pte(pgd_t *pgd, void *vaddr)
 	return &(pgd[pgd_idx][pte_idx]);
 }
 
+/**
+ * @brief Check page table entry valid field.
+ * @param pte	page table entry
+ * @return valid or not
+ */
 bool pte_is_valid(pte_t *pte)
 {
 	return pte->tlb_entry.reg.V;
 }
 
+/**
+ * @brief Get tlb information of a page table entry.
+ * @param pte	page table entry
+ * @return tlb information
+ */
 u32 get_pte_tlb_entry(pte_t *pte)
 {
 	return pte->tlb_entry.value;
 }
 
+/**
+ * @brief Set tlb information of a page table entry.
+ * @param pte	page table entry
+ * @param value	value
+ */
 void set_pte_tlb_entry(pte_t *pte, u32 value)
 {
 	pte->tlb_entry.value = value;
 }
 
+/**
+ * @brief [Unimplemented] Check if a virtual address is in a virtal memory space.
+ * @param mm		mm_struct
+ * @param vaddr		virtual address
+ * @return check result
+ */
 int find_vma(struct mm_struct *mm, void *vaddr)
 {
 	return 1;
 }
 
+/**
+ * @brief Do page fault for a virtual address.
+ * @param vaddr		virtual address
+ */
 void do_pagefault(void *vaddr)
 {
 	int vma = find_vma(mm_current, vaddr);
@@ -142,13 +187,18 @@ void do_pagefault(void *vaddr)
 		set_pte_tlb_entry(pte, lo);
 	} else {
 		/**
-		 * 2. this virtual address is not in vma
+		 * 2. [Unimplemented] this virtual address is not in vma
 		 * TODO: kill the process
 		 */
 	}
-	// kernel_printf("end page fault.\n");
 }
 
+/**
+ * @brief Swap one page.
+ * @param mm		mm_struct
+ * @param vaddr		virtual address
+ * @return victim physical address
+ */
 void *swap_one_page(struct mm_struct *mm, void *vaddr)
 {
 	struct page *pagep = list_first_entry(&mm->fifo, struct page, list);
@@ -180,6 +230,17 @@ void *swap_one_page(struct mm_struct *mm, void *vaddr)
 	return paddr;
 }
 
+/**
+ * @brief Get EntryHi of a virtual address.
+ * @param vaddr		virtual address
+ * @param asid		process asid
+ * @return EntryHi value
+ * 
+ * EntryHi is a CP0 register in MIPS, it is used for operating tlb,
+ * in tlbw, tlbp, etc, where EntryHi is referred as input or search key.
+ * 
+ * See ouros/arch/mips/tlb.c.
+ */
 u32 get_entry_hi(void *vaddr, uint asid)
 {
 	union EntryHi entry_hi;
@@ -189,6 +250,10 @@ u32 get_entry_hi(void *vaddr, uint asid)
 	return entry_hi.value;
 }
 
+/**
+ * @brief Release memory allocated in a virtual memory space.
+ * @param mm	mm_struct
+ */
 void free_mm_struct(struct mm_struct *mm)
 {
 	struct list_head *p = mm->fifo.next;
@@ -214,6 +279,11 @@ void free_mm_struct(struct mm_struct *mm)
 	kfree(mm);
 }
 
+/**
+ * @brief [Bug] Load a file and map it in user space.
+ * @param file_name		file name
+ * @return load target virtual address
+ */
 void *mmap(const char *file_name)
 {
 	void *ret = nullptr;

@@ -26,9 +26,9 @@ struct buddy_free_area {
 #define MAX_BUDDY_ORDER 4
 
 struct buddy_zone {
-	uint start_pfn;
-	uint page_num;
-	struct page *pages;
+	uint start_pfn;			// start page frame number
+	uint page_num;			// total page frames
+	struct page *pages;		// page struct of the start page frame
 	struct buddy_free_area free_area[MAX_BUDDY_ORDER + 1];	// 0, 1, ..., MAX_BUDDY_ORDER
 };
 
