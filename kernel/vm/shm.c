@@ -67,4 +67,5 @@ void shmat(int shmid, void *vaddr)
 		pte->tlb_entry.reg.V = 1;
 		p += i * PAGE_SIZE;
 	}
+	shm_pool[shmid]->count ++;
 }

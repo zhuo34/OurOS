@@ -8,6 +8,7 @@
 struct shm_struct {
 	uint pfn_start;
 	uint pfn_num;
+	uint count;
 };
 
 // struct shm_pool_struct {
