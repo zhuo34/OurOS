@@ -6,114 +6,194 @@
 #include <ouros/error.h>
 #include <ouros/assert.h>
 
-static 	MBR 	*sdCard_MBR;
+#include <ouros/fs/fat.h>
+#include <ouros/fs/ext2.h>
+#include <ouros/fs/fscache.h>
 
-static Byte malloc_buffer[2048];
-static int malloc_index = 0;
+#include <ouros/mm.h>
 
-void* kmalloc(uint size) {
-	Byte* ret = malloc_buffer + malloc_index;
-	malloc_index += size;
-	return ret; 
-}
-void  kfree(void* p) {
+#include "../usr/fs_cmd.h"
 
-}
+// 超级块链表
+static list_head *sb_list;
+
+static dentry *root_dentry;
+static dentry *pwd_dentry;
 
 void init_fs()
 {
-	int err = NO_ERROR;
+	int error = NO_ERROR;
 
-	err = read_MBR();
-	if(err) {
-		log(LOG_FAIL, "Read MBR");
+	// 初始化文件系统缓存区
+	error = init_fscache();
+	if(IS_ERR_VALUE(error)) {
+		log(LOG_FAIL, "init_fscache, error code %d", error);
 		return;
+	} else {
+		log(LOG_OK, "init_fscache");
 	}
-	log(LOG_OK, "Read MBR");
 
-	// for(int i=0; i<sdCard_MBR->par_count; i++) {
-	// 	sdCard_MBR->par_fs_system[i]->getSuperBlock;
-	// 	superblock->init(baseaddr)
-	// }
+	// 读取SD卡分区表并初始化各分区的文件系统
+	error = read_MBR();
+	if(IS_ERR_VALUE(error)) {
+		log(LOG_FAIL, "read_MBR, error code %d", error);
+		return;
+	} else {
+		log(LOG_OK, "read_MBR");
+	}
+
+	// 初始化根目录项
+	super_block *sb = container_of(sb_list->next, super_block, s_listnode);
+	root_dentry = sb->s_root;
+	d_inc_count(root_dentry);
+
+	// 预读取根目录并创建对应的文件夹
+	pwd_dentry = root_dentry;
+	mkdir("/home");
+	// mkdir("/mnt");
+
+	// 挂载其他分区的文件系统
+	char name[] = "/mnt/fs0";
+	const int index = 7;
+	list_head *p;
+	list_for_each(p, sb_list) {
+		super_block *cur_sb = container_of(p, super_block, s_listnode);
+		if(cur_sb == sb)
+			continue;
+
+		name[index] ++;
+		file *fp = fs_open(name, F_MODE_READ_WRITE | F_MODE_DIR_MASK);
+		if(IS_ERR_PTR(fp)) {
+			log(LOG_FAIL, "mount to %s", name);
+			return;
+		}
+		dentry *entry = fp->f_dentry;
+		entry->d_mounted = true;
+		cur_sb->s_mnt.mnt_parent = &sb->s_mnt;
+		cur_sb->s_mnt.mnt_mntpoint = entry;
+
+		fs_close(fp);
+
+	}
+
+	// 进入主目录
+    cd("");
+
 }
 
 int read_MBR()
 {
-			sdCard_MBR 		= nullptr;
-	Byte* 	buf_MBR 		= nullptr;
+	int error = NO_ERROR;
 
-	int 	error 			= NO_ERROR;
-
-	// 申请SD卡的MBR结构体
-    sdCard_MBR = (MBR*)kmalloc(sizeof(MBR));
-    if (sdCard_MBR == nullptr) {
-		error = ERROR_NO_MEMORY;
-		goto err;
-	}
-	
 	// 申请buffer读取MBR数据
-	buf_MBR = (Byte*)kmalloc(SECTOR_SIZE);
+	Byte* buf_MBR = (Byte*)kmalloc (SECTOR_SIZE);
 	if (buf_MBR == nullptr) {
-		error = ERROR_NO_MEMORY;
-		goto err;
+		error = -ERROR_NO_MEMORY;
+		goto exit;
 	}
-	kernel_memset_uint(buf_MBR, 0, SECTOR_SIZE);
 
 	// 从SD卡读取MBR数据
 	if (!sd_read_block(buf_MBR, 0, 1)) {
-		error = ERROR_READ_MBR;
-		goto err;
+		error = -ERROR_READ_SDCARD;
+		goto exit;
 	}
 
+	// 初始化超级块链表
+	sb_list = (list_head*)kmalloc (sizeof(list_head));
+	if(IS_ERR_PTR(sb_list)) {
+		error = PTR_ERR(sb_list);
+		goto exit;
+	}
+	INIT_LIST_HEAD(sb_list);
+	
 	// 解析MBR数据
 	// 主引导记录占446字节，之后的数据为硬盘分区表(DPT) Disk Partition Table
 	DPT *curDPT = (DPT*)(buf_MBR + 446);
-	int cnt;
-	for(cnt = 0; cnt < MAX_PAR_COUNT; cnt ++) {
-		DWord base_addr = read_unaligned(&curDPT->dpt_base_addr, sizeof(DWord));
+	for(int i = 0; i < MAX_PAR_COUNT; i ++, curDPT ++) {
+		// 获得当前分区的起始地址
+		DWord base_addr = read_data(&curDPT->dpt_base_addr, sizeof(curDPT->dpt_base_addr));
 		if(!base_addr) 
-			break;
-		kernel_printf("dpt_base_addr: %d\n", base_addr);
-		
-		sdCard_MBR->par_base_addr[cnt] = base_addr;
-		if(error = get_fs_type(&sdCard_MBR->par_fs_type[cnt], curDPT->dpt_systemID)) {
-			goto err;
+			continue;
+		// kernel_printf("dpt_base_addr: %d\n", base_addr);
+
+		// 根据systemID获得当前分区的文件系统类型
+		file_system_type *type = get_fs_type(curDPT->dpt_systemID);
+		if(!type) {
+			error = -ERROR_UNKNOWN_FS;
+			goto exit;
 		}
-		curDPT ++;
+		// 根据文件系统类型创建超级块
+		super_block *sb = type->get_sb(base_addr);
+		if(IS_ERR_PTR(sb)) {
+			error = PTR_ERR(sb);
+			goto exit;
+		}
+		list_add_tail(&sb->s_listnode, sb_list);
 	}
-	sdCard_MBR->par_count = cnt;
-	goto exit;
 
-err:
-	kfree(sdCard_MBR);
 exit:
-	kfree(buf_MBR);
+	kfree (buf_MBR);
 	return error;
-
 }
 
-DWord read_unaligned(void *addr, uint size)
+DWord read_data(void *addr, uint size)
 {
 	kernel_assert(size > 0 && size <= 4, "read_unaligned");
 
 	DWord ret = 0;
-	kernel_memcpy(&ret, addr, (int)size);
+	kernel_memcpy(&ret, addr, size);
 	return ret;
 }
 
-int get_fs_type(FS_Type* const type, Byte systemID)
+file_system_type* get_fs_type(Byte systemID)
 {
-	int error = NO_ERROR;
-	if(systemID == SYSTEM_ID_FAT32) {
-		type->name = "fat32";
-	} else if(systemID == SYSTEM_ID_EXT2) {
-		type->name = "ext2";
-	} else if(systemID == SYSTEM_ID_NTFS) {
-		type->name = "ntfs";
-	} else {
-		type->name = "unknown";
-		error = ERROR_UNKNOWN_FS;
+	file_system_type *type = nullptr;
+	if(SYSTEM_ID_FAT32(systemID)) {
+		type = get_fs_type_fat32();
+	} else if(SYSTEM_ID_EXT2(systemID)) {
+		type = get_fs_type_ext2();
 	}
-	kernel_printf("0x%X  %s\n", systemID, type->name);
-	return error;
+
+	// kernel_printf("0x%X  %s\n", systemID, type? type->name: "unknown");
+	return type;
+}
+
+list_head* get_sb_list_entry()
+{
+	return sb_list;
+}
+
+dentry* get_root_dentry()
+{
+	return root_dentry;
+}
+
+dentry* get_pwd_dentry()
+{
+	return pwd_dentry;
+}
+
+void set_pwd_dentry(dentry* entry)
+{
+	pwd_dentry = entry;
+}
+
+void d_inc_count(dentry* entry) {
+	entry->d_count ++;
+	list_move(&entry->d_LRU, &get_fscache(D_CACHE)->LRU);
+}
+
+void d_dec_count(dentry* entry) {
+	entry->d_count --;
+	list_move(&entry->d_LRU, &get_fscache(D_CACHE)->LRU);
+}
+
+void i_inc_count(inode* node) {
+	node->i_count ++;
+	list_move(&node->i_LRU, &get_fscache(I_CACHE)->LRU);
+}
+
+void i_dec_count(inode* node) {
+	node->i_count --;
+	list_move(&node->i_LRU, &get_fscache(I_CACHE)->LRU);
 }

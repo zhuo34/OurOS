@@ -1,7 +1,7 @@
 #include <arch.h>
 #include <exc.h>
 #include <intr.h>
-#include <page.h>
+#include <tlb.h>
 
 #include <driver/ps2.h>
 #include <driver/vga.h>
@@ -10,9 +10,12 @@
 #include <ouros/log.h>
 
 #include <ouros/pc.h>
-#include <ouros/slab.h>
-#include <ouros/bootmm.h>
-#include <ouros/buddy.h>
+#include <ouros/mm.h>
+// #include <ouros/slab.h>
+// #include <ouros/bootmm.h>
+// #include <ouros/buddy.h>
+#include <ouros/vm.h>
+#include <ouros/shm.h>
 
 #include <ouros/fs/fs.h>
 
@@ -20,32 +23,22 @@
 
 #include "../usr/ps.h"
 #include "../usr/shell.h"
+#pragma GCC push_options
+#pragma GCC optimize("O0")
 
-void machine_info() {
-    int row;
-    int col;
-    kernel_printf("\n%s\n", "412-UNIX V1.0");
-    row = cursor.row;
-    col = cursor.col;
-    cursor.row = VGA_DISPLAY_MAX_ROW - 1;
-    kernel_printf("%s", "Created by Dorm 412 Block 32, Yuquan Campus, Zhejiang University.");
-    cursor.row = row;
-    cursor.col = col;
-    kernel_set_cursor();
-}
 
 void init_kernel() {
     // init_done = 0;
     kernel_clear_screen();
     // Exception
     init_exception();
-    // Page table
-    init_pgtable();
     // Drivers
     init_vga();
     init_ps2();
     init_time();
 
+    // tlb
+    init_tlb();
     // Memory management
     log(LOG_START, "Memory Modules.");
     init_bootmm();
@@ -55,6 +48,7 @@ void init_kernel() {
     init_slab();
     log(LOG_OK, "Slab.");
     log(LOG_END, "Memory Modules.");
+	init_page_pool();
 
     // File system
     log(LOG_START, "File System.");
@@ -62,9 +56,9 @@ void init_kernel() {
     log(LOG_END, "File System.");
 
     // System call
-    log(LOG_START, "System Calls.");
-    init_syscall();
-    log(LOG_END, "System Calls.");
+    // log(LOG_START, "System Calls.");
+    // init_syscall();
+    // log(LOG_END, "System Calls.");
 
     // Process control
     log(LOG_START, "Process Control Module.");
@@ -74,10 +68,8 @@ void init_kernel() {
     log(LOG_START, "Enable Interrupts.");
     init_interrupts();
     log(LOG_END, "Enable Interrupts.");
-    // Init finished
-    machine_info();
-    *GPIO_SEG = 0x11223344;
+    *GPIO_SEG = 0x12345678;
 
-    ps();
-    // osh();
+    osh();
 }
+#pragma GCC pop_options

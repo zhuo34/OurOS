@@ -1,4 +1,5 @@
 #include "shell.h"
+#include "fs_cmd.h"
 
 char ps_buffer[64];
 
@@ -8,10 +9,10 @@ void osh()
     // 初始化
     char cmd[MAX_COMMAND_LENGTH];
     kernel_clear_screen();
-    // 原ZJUNIX怎么还PowerShell的，这Windows遗毒是有多深
+    // 原ZJUNIX怎么还PowerShell的
     kernel_puts("OurShell Starts!\n\n");
 
-    kernel_puts("osh>");
+    print_prompt();
     while (1)
     {
         // 从标准输入读入，传给解析器解析
@@ -19,7 +20,7 @@ void osh()
         {
             parse_cmd(cmd);
         }
-        kernel_puts("osh>");
+        print_prompt();
     }
 }
 
@@ -34,15 +35,18 @@ void parse_cmd(char* cmd)
     int status = 0;
 
     // 目前为单个命令，如果支持多条命令，也用链表
-    struct command* thisCmd = (struct command*)kernel_malloc(sizeof(struct command));
+    struct command* thisCmd = (struct command*)kmalloc(sizeof(struct command));
+    kernel_memset(thisCmd->cmdName, 0, MAX_ARGUMENT_LENGTH);
     // 参数链表
-    thisCmd->argList = (struct argumentNode*)kernel_malloc(sizeof(struct argumentNode));
+    thisCmd->argList = (struct argumentNode*)kmalloc(sizeof(struct argumentNode));
     struct argumentNode* thisArg = thisCmd->argList;
     thisArg->nextArg = (void*)0;
     
-
     int cmdIndex = 0, argIndex = 0;
+
+    int len = kernel_strlen(cmd) + 1;
     // 扫描一遍字符串
+    // 看不懂两个月前写的代码系列
     while (cmd[cmdIndex] && cmdIndex < MAX_COMMAND_LENGTH)
     {
         // 正常字符
@@ -107,52 +111,199 @@ void parse_cmd(char* cmd)
             }
         }
     }
-    exec_cmd_pre(thisCmd);
-}
-
-void exec_cmd_pre(struct command* cmd)
-{
-    int pid = kernel_fork();
-    switch(pid)
-    {
-        case -1:
-            kernel_printf_error("fork fail\n\n");
-            kernel_exit(1);
-        // 暂时不考虑后台命令
-        // 子进程
-        case 0:
-        {
-            // 阻塞，在进程表找到自己的位置
-            // 等主进程放行
-        }
-        // 主进程
-        default:
-        {
-            // 把子进程的信息写入进程表，然后放行
-            // 阻塞，等待SIGCHLD信号
-            // 把子进程从进程表里删掉
-        }
-    }
+    exec_cmd(thisCmd);
 }
 
 // 子进程执行命令
 void exec_cmd(struct command* cmd)
 {
-    // 内建命令所用函数的接收参数统一为struct command*
-    kernel_printf_error("command is running\n\n");
+    kernel_printf("\n");
+    if(kernel_strcmp(cmd->cmdName, "") == 0)
+    {
+    }
+    else if(kernel_strcmp(cmd->cmdName, "pwd") == 0)
+    {
+        pwd();
+    } 
+    else if (kernel_strcmp(cmd->cmdName, "ls") == 0)
+    {
+        char* name = cmd->argList->nextArg ? cmd->argList->nextArg->argName : nullptr;
+        ls(name);
+    } 
+    else if (kernel_strcmp(cmd->cmdName, "cd") == 0)
+    {
+        char* name = cmd->argList->nextArg ? cmd->argList->nextArg->argName : nullptr;
+        cd(name);
+    } 
+    else if (kernel_strcmp(cmd->cmdName, "cat") == 0)
+    {
+        if(!cmd->argList->nextArg)
+        {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        cat(cmd->argList->nextArg->argName);
+    }
+    else if (kernel_strcmp(cmd->cmdName, "exec") == 0)
+    {
+        if(!cmd->argList->nextArg)
+        {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        loadUserProgram(cmd->argList->nextArg->argName);
+    }
+    else if (kernel_strcmp(cmd->cmdName, "print") == 0)
+    {
+        if(!cmd->argList->nextArg)
+        {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        else if (kernel_strcmp(cmd->argList->nextArg->argName, "buddy") == 0) {
+            print_buddy_info();
+        } else if (kernel_strcmp(cmd->argList->nextArg->argName, "slab") == 0) {
+            print_slab_info();
+        } else if (kernel_strcmp(cmd->argList->nextArg->argName, "tlb") == 0) {
+            print_tlb();
+        }
+    }
+    else if (kernel_strcmp(cmd->cmdName, "test") == 0)
+    {
+        if(!cmd->argList->nextArg)
+        {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        else if (kernel_strcmp(cmd->argList->nextArg->argName, "buddy") == 0) {
+            if(cmd->argList->nextArg->nextArg) {
+                test_buddy(cmd->argList->nextArg->nextArg->argName[0] - '0');
+            } else {
+                kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+                return;
+            }
+        } else if (kernel_strcmp(cmd->argList->nextArg->argName, "slab") == 0) {
+            test_slab();
+        } else if (kernel_strcmp(cmd->argList->nextArg->argName, "pf") == 0) {
+            if(cmd->argList->nextArg->nextArg) {
+                page_fault_debug = 1;
+                test_page_fault(cmd->argList->nextArg->nextArg->argName[0] - '0');
+                page_fault_debug = 0;
+            } else {
+                kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+                return;
+            }
+        }
+    }
+    else if (kernel_strcmp(cmd->cmdName, "sig") == 0)
+    {
+        test_sig();
+    }
+    else if (kernel_strcmp(cmd->cmdName, "ipc") == 0)
+    {
+        test_shm();
+    }
+    else if (kernel_strcmp(cmd->cmdName, "rm") == 0) 
+    {
+        if(!cmd->argList->nextArg) {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        rm(cmd->argList->nextArg->argName);
+    }
+    else if (kernel_strcmp(cmd->cmdName, "mkdir") == 0) 
+    {
+        if(!cmd->argList->nextArg) {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        mkdir(cmd->argList->nextArg->argName);
+    } 
+    else if (kernel_strcmp(cmd->cmdName, "touch") == 0) 
+    {
+        if(!cmd->argList->nextArg) {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        touch(cmd->argList->nextArg->argName);
+    } 
+    else if (kernel_strcmp(cmd->cmdName, "mv") == 0) 
+    {
+        if(!cmd->argList->nextArg || !cmd->argList->nextArg->nextArg) {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        mv(cmd->argList->nextArg->argName, cmd->argList->nextArg->nextArg->argName);
+    } 
+    else if (kernel_strcmp(cmd->cmdName, "app") == 0) 
+    {
+        if(!cmd->argList->nextArg) {
+            kernel_printf("%s: not enough arguments. \n", cmd->cmdName);
+			return;
+		}
+        app(cmd->argList->nextArg->argName, cmd->argList->nextArg->nextArg->argName);
+    }
+    else
+    {
+        kernel_printf("%s: unknown command. \n", cmd->cmdName);
+    }
 }
 
 struct argumentNode* newArg(struct argumentNode* arg)
 {
-    arg->nextArg = (struct argumentNode*)kernel_malloc(sizeof(struct argumentNode));
+    arg->nextArg = (struct argumentNode*)kmalloc(sizeof(struct argumentNode));
     struct argumentNode* thisArg = arg->nextArg;
+    kernel_memset(thisArg->argName, 0, MAX_ARGUMENT_LENGTH);
     thisArg->nextArg = (void*)0;
     return thisArg;
 }
 
-// 原ZJUNIX里有的这里没有的：一堆内建命令，每个实现为一个函数
-// 还要添加：进程表初始化、新建、删除、查找的函数
-
-int kernel_fork() { return 1; }
-void kernel_exit(int code) { }
-void* kernel_malloc(uint size) { return nullptr; }
+// 从标准输入获取一行
+bool read_line(char* str, int length)
+{
+    int c;
+    int index = 0;
+    while (1)
+    {
+        c = kernel_getchar();
+        // 回车，结束输入
+        if ('\n' == c)
+        {
+            // 确保字符串结尾是'\0'
+            // 在自己的电脑上测试不需要结尾的\n
+            // 但是在板子上测试必须加上\n
+            // 否则最后一个字符必须是空格，正常字符读不到
+            str[index] = c;
+            str[index + 1] = 0;
+            return true;
+        }
+        // 回退，删除一个字符，将其从数组中删除，也从屏幕上消失
+        else if ('\b' == c)
+        {
+            if (index)
+            {
+                // 原ZJUNIX代码只有index--，这时按下回车不就出bug了
+                str[index--] = '\0';
+                // 删除字符，重置光标
+                kernel_putchar_at(' ', cursor.row, cursor.col - 1);
+                cursor.col--;
+                kernel_set_cursor();
+            }
+        }
+        // 输入了EOF，现在应该还遇不到
+        else if (-1 == c)
+        {
+            return false;
+        }
+        // 输入一般字符，存在字符串中并显示出来
+        else
+        {
+            // length要减1，结尾给'\0'留个位置
+            if (index < length - 1)
+            {
+                str[index++] = c;
+                kernel_putchar(c);
+            }
+        }
+    }
+}

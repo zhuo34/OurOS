@@ -9,7 +9,7 @@ export MAP := kernel.map
 export ELF := kernel.elf
 export DISASSEMBLY := kernel.txt
 ifndef INSTALL_DIR
-	INSTALL_DIR := 
+	INSTALL_DIR := /Volumes/CZ
 endif
 
 # code entrance label

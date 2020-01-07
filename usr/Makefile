@@ -1,3 +1,3 @@
-OBJS := ps.o shell.o terminal.o our_string.o
+OBJS := shell.o shell.o terminal.o fs_cmd.o
 
 include $(SUB_MAKE_INCLUDE)

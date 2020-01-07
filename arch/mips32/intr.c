@@ -1,10 +1,13 @@
 #include "intr.h"
 #include "arch.h"
+#include <driver/vga.h>
 
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 
 intr_fn interrupts[8];
+
+int time_9;
 
 void init_interrupts() {
     // status 0000 0000 0000 0000 1001 1100 0000 0001
@@ -24,8 +27,10 @@ int enable_interrupts() {
         "mfc0 $t0, $12\n\t"
         "andi %0, $t0, 0x1\n\t"
         "ori $t0, $t0, 0x1\n\t"
-        "mtc0 $t0, $12"
-        : "=r"(old));
+        "mtc0 $t0, $12\n\t"
+        "mtc0 %1, $9"
+        : "=r"(old)
+        : "r"(time_9));
     return old;
 }
 
@@ -36,20 +41,23 @@ int disable_interrupts() {
         "andi %0, $t0, 0x1\n\t"
         "li $t1, 0xfffffffe\n\t"
         "and $t0, $t0, $t1\n\t"
-        "mtc0 $t0, $12"
-        : "=r"(old));
+        "mtc0 $t0, $12\n\t"
+        "mfc0 %1, $9"
+        : "=r"(old), "=r"(time_9));
     return old;
 }
 
 void do_interrupts(unsigned int status, unsigned int cause, context* sp) {
     int i;
     int index = cause >> 8;
+    // kernel_printf("xxxx\n");
     for (i = 0; i < 8; i++) {
         if ((index & 1) && interrupts[i] != 0) {
             interrupts[i](status, cause, sp);
         }
         index >>= 1;
     }
+    // kernel_printf("EPC in do_interrupts: %x\n", sp->epc);
 }
 
 void register_interrupt_handler(int index, intr_fn fn) {
